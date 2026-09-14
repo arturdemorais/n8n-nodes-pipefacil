@@ -1,7 +1,5 @@
 import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from 'n8n-workflow';
 import {
-	cadencesDescription,
-	calendarDescription,
 	conversationsDescription,
 	dealsDescription,
 	getCustomDealFields,
@@ -20,7 +18,7 @@ export class Pipefacil implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Use the PipeFácil public API to manage deals, conversations, calendars and cadences.',
+		description: 'Use the PipeFácil public API to manage deals, conversations and workspace references.',
 		defaults: {
 			name: 'PipeFácil',
 		},
@@ -43,14 +41,6 @@ export class Pipefacil implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Cadence',
-						value: 'cadence',
-					},
-					{
-						name: 'Calendar',
-						value: 'calendar',
-					},
-					{
 						name: 'Conversation',
 						value: 'conversation',
 					},
@@ -67,9 +57,7 @@ export class Pipefacil implements INodeType {
 			},
 			...dealsDescription,
 			...referenceDescription,
-			...calendarDescription,
 			...conversationsDescription,
-			...cadencesDescription,
 		],
 	};
 

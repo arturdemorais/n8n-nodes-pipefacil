@@ -2,7 +2,7 @@
 
 Node da comunidade n8n para integrar workflows ao CRM PipeFácil, da Match Sales.
 Ele usa a API pública oficial para consultar e atualizar negócios, conversar com
-contatos, consultar referências do workspace, gerenciar reuniões e operar cadências.
+contatos e consultar referências do workspace.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
@@ -24,14 +24,10 @@ O node é declarativo e cobre as rotas públicas documentadas do PipeFácil:
 
 - Deals: criar, consultar, listar, atualizar, adicionar/remover tags e listar atividades
 - Reference: contatos, empresas, funis, tags, campos personalizados e usuários
-- Calendar: listar, criar, consultar, atualizar e excluir reuniões
 - Conversations: enviar mensagens e listar conversas/mensagens
-- Cadences: listar cadências/inscrições, inscrever, pausar, retomar, iniciar,
-  remover inscrição, executar, pular e concluir tarefas
 
 As listas com cursor oferecem `Return All` e `Limit`. A execução de uma tarefa de
-cadência pode enviar uma mensagem, e-mail ou chamada real e deve ser usada com uma
-chave de idempotência.
+conversa pode enviar uma mensagem pela API pública.
 
 ## Credentials
 
@@ -71,5 +67,4 @@ fora dela, use um template aprovado. O WhatsApp Lite não aplica essa janela.
 
 ## Version history
 
-- `0.1.0`: primeira versão com a API pública de deals, referências, calendário,
-  conversas e cadências
+- `0.1.0`: primeira versão com a API pública de deals, referências e conversas
