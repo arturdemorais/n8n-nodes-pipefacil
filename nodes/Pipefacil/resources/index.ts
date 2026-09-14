@@ -7,5 +7,6 @@ export {
 	getDealFields,
 	getPipelineOptions,
 	getStageOptions,
+	searchDeals,
 } from './deals';
 export { referenceDescription } from './reference';

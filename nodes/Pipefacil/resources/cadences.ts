@@ -1,5 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-import { bodyString, cursorPagination, dataOutput, displayOptions, numberQuery, pathString, stringQuery } from './common';
+import { bodyString, cursorPagination, dataOutput, displayOptions, optionalFields, pathString } from './common';
 
 export const cadencesDescription: INodeProperties[] = [
 	{
@@ -28,10 +28,12 @@ export const cadencesDescription: INodeProperties[] = [
 	},
 	bodyString('cadence', 'pauseDeal', 'reason', 'Reason', 'Optional reason for pausing the cadence.'),
 	...cursorPagination('cadence', 'listEnrollments'),
-	stringQuery('cadence', 'listEnrollments', 'status', 'Status', 'Filter by enrollment status.'),
-	numberQuery('cadence', 'listEnrollments', 'day', 'Day', 0, 'Filter by cadence day.'),
-	numberQuery('cadence', 'listEnrollments', 'step', 'Step', 0, 'Filter by cadence step.'),
-	stringQuery('cadence', 'listEnrollments', 'at', 'At', 'Filter by the cadence task timestamp.'),
+	optionalFields('cadence', 'listEnrollments', 'enrollmentFilters', 'Filters', 'Add filters only when you need to narrow the enrollment list.', [
+		{ displayName: 'Status', name: 'status', type: 'string', default: '', routing: { send: { type: 'query', property: 'status' } } },
+		{ displayName: 'Day', name: 'day', type: 'number', default: 0, routing: { send: { type: 'query', property: 'day' } } },
+		{ displayName: 'Step', name: 'step', type: 'number', default: 0, routing: { send: { type: 'query', property: 'step' } } },
+		{ displayName: 'At', name: 'at', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'at' } } },
+	]),
 	bodyString('cadence', 'executeTask', 'idempotencyKey', 'Idempotency Key', 'Required key that prevents a task from being sent twice.', { required: true }),
 	bodyString('cadence', 'executeTask', 'message', 'Message', 'WhatsApp message body.'),
 	bodyString('cadence', 'executeTask', 'subject', 'Subject', 'Email subject.'),

@@ -2,13 +2,14 @@ import type {
 	IDataObject,
 	IExecuteSingleFunctions,
 	IHttpRequestOptions,
+	INodeListSearchResult,
 	ILoadOptionsFunctions,
 	INodeProperties,
 	INodePropertyOptions,
 	ResourceMapperField,
 	ResourceMapperFields,
 } from 'n8n-workflow';
-import { bodyJson, bodyString, cursorPagination, dataOutput, displayOptions, numberQuery, pathString, stringQuery } from './common';
+import { bodyString, cursorPagination, dataOutput, displayOptions, optionalFields, pathString } from './common';
 
 const create = 'create';
 const update = 'update';
@@ -32,6 +33,22 @@ function getResponseData(response: unknown): ApiRecord[] {
 	}
 
 	return response.data.filter(isRecord);
+}
+
+function getListItems(response: unknown): ApiRecord[] {
+	if (!isRecord(response) || !isRecord(response.data) || !Array.isArray(response.data.items)) {
+		return [];
+	}
+
+	return response.data.items.filter(isRecord);
+}
+
+function getScalar(value: unknown): string | undefined {
+	if (typeof value === 'string' || typeof value === 'number') {
+		return String(value);
+	}
+
+	return undefined;
 }
 
 async function getPipelines(this: ILoadOptionsFunctions): Promise<ApiRecord[]> {
@@ -161,6 +178,29 @@ export async function getStageOptions(this: ILoadOptionsFunctions): Promise<INod
 	});
 }
 
+export async function searchDeals(
+	this: ILoadOptionsFunctions,
+	filter?: string,
+): Promise<INodeListSearchResult> {
+	const response = await this.helpers.httpRequestWithAuthentication.call(this, 'pipefacilApi', {
+		method: 'GET',
+		url: `${apiBaseUrl}/deals`,
+		qs: { limit: 50, ...(filter ? { search: filter } : {}) },
+	});
+
+	return {
+		results: getListItems(response).flatMap((deal) => {
+			const sequence = getScalar(deal.seq ?? deal.sequence);
+			if (!sequence) {
+				return [];
+			}
+
+			const name = getString(deal.name) ?? getString(deal.contactName) ?? getString(deal.phone);
+			return [{ name: name ? `${name} (#${sequence})` : `Lead #${sequence}`, value: sequence }];
+		}),
+	};
+}
+
 export async function getCustomDealFields(this: ILoadOptionsFunctions): Promise<ResourceMapperFields> {
 	const pipelineId = this.getNodeParameter('pipelineId');
 	const response = await this.helpers.httpRequestWithAuthentication.call(this, 'pipefacilApi', {
@@ -268,6 +308,30 @@ const createDealFields: INodeProperties[] = [
 	},
 ];
 
+const dealLocator = (operations: string | string[]): INodeProperties => ({
+	displayName: 'Lead',
+	name: 'deal',
+	type: 'resourceLocator',
+	default: { mode: 'list', value: '' },
+	required: true,
+	displayOptions: displayOptions('deal', operations),
+	description: 'Choose a lead, or switch to By Sequence to use a value from another node',
+	modes: [
+		{
+			displayName: 'From List',
+			name: 'list',
+			type: 'list',
+			typeOptions: { searchListMethod: 'searchDeals', searchable: true },
+		},
+		{
+			displayName: 'By Sequence',
+			name: 'id',
+			type: 'string',
+			placeholder: 'For example: 123',
+		},
+	],
+});
+
 export const dealsDescription: INodeProperties[] = [
 	{
 		displayName: 'Operation',
@@ -277,63 +341,64 @@ export const dealsDescription: INodeProperties[] = [
 		displayOptions: displayOptions('deal'),
 		options: [
 			{ name: 'Create', value: create, action: 'Create a deal', description: 'Create a new deal', routing: { request: { method: 'POST', url: '/deals' }, send: { preSend: [prepareCreateDealRequest] } } },
-			{ name: 'Get', value: get, action: 'Get a deal', description: 'Get one deal by sequence', routing: { request: { method: 'GET', url: '=/deals/{{$parameter.dealSeq}}' }, ...dataOutput() } },
+			{ name: 'Get', value: get, action: 'Get a deal', description: 'Get one lead', routing: { request: { method: 'GET', url: '=/deals/{{$parameter.deal.value}}' }, ...dataOutput() } },
 			{ name: 'Get Many', value: 'getAll', action: 'Get deals', description: 'List open deals', routing: { request: { method: 'GET', url: '/deals' } } },
 			{ name: 'List Custom Field Values', value: 'getCustomFieldValues', action: 'List deal custom field values', description: 'List custom field values across deal statuses', routing: { request: { method: 'GET', url: '/deals/custom-field-values' } } },
-			{ name: 'Update', value: update, action: 'Update a deal', description: 'Update a deal or move it between stages', routing: { request: { method: 'PATCH', url: '=/deals/{{$parameter.dealSeq}}' }, ...dataOutput() } },
-			{ name: 'Add Tag', value: 'addTag', action: 'Add a deal tag', description: 'Add a tag to a deal', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.dealSeq}}/tags' }, ...dataOutput() } },
-			{ name: 'Remove Tag', value: 'removeTag', action: 'Remove a deal tag', description: 'Remove a tag from a deal', routing: { request: { method: 'DELETE', url: '=/deals/{{$parameter.dealSeq}}/tags/{{$parameter.tagId}}' } } },
-			{ name: 'List Activities', value: 'getActivities', action: 'List deal activities', description: 'List a deal activity log', routing: { request: { method: 'GET', url: '=/deals/{{$parameter.dealSeq}}/activities' } } },
+			{ name: 'Update', value: update, action: 'Update a deal', description: 'Update a deal or move it between stages', routing: { request: { method: 'PATCH', url: '=/deals/{{$parameter.deal.value}}' }, ...dataOutput() } },
+			{ name: 'Add Tag', value: 'addTag', action: 'Add a deal tag', description: 'Add a tag to a deal', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/tags' }, ...dataOutput() } },
+			{ name: 'Remove Tag', value: 'removeTag', action: 'Remove a deal tag', description: 'Remove a tag from a deal', routing: { request: { method: 'DELETE', url: '=/deals/{{$parameter.deal.value}}/tags/{{$parameter.tagId}}' } } },
+			{ name: 'List Activities', value: 'getActivities', action: 'List deal activities', description: 'List a deal activity log', routing: { request: { method: 'GET', url: '=/deals/{{$parameter.deal.value}}/activities' } } },
 		],
 		default: 'getAll',
 	},
-	pathString('deal', [get, update, 'addTag', 'removeTag', 'getActivities'], 'dealSeq', 'Deal Sequence', 'Workspace-scoped deal sequence.'),
+	dealLocator([get, update, 'addTag', 'removeTag', 'getActivities']),
 	pathString('deal', 'removeTag', 'tagId', 'Tag ID', 'Identifier of the tag to remove.'),
 	...createDealFields,
-	bodyString('deal', update, 'name', 'Deal Name', 'New deal name.'),
-	bodyString('deal', update, 'value', 'Value', 'New monetary value.', { type: 'number', default: 0 }),
-	bodyString('deal', update, 'currency', 'Currency', 'ISO currency code.'),
-	bodyString('deal', update, 'closeProbability', 'Close Probability', 'Probability from 0 to 100.', { type: 'number', default: 0 }),
-	bodyString('deal', update, 'expectedCloseAt', 'Expected Close At', 'Expected closing date and time in ISO-8601 format.'),
-	bodyString('deal', update, 'stageId', 'Stage ID', 'Move the deal to this pipeline stage.'),
-	bodyString('deal', update, 'companyId', 'Company ID', 'Company identifier associated with the deal.'),
-	bodyString('deal', update, 'responsibleUserId', 'Responsible User ID', 'New responsible user.'),
-	bodyString('deal', update, 'coOwnerUserId', 'Co-owner User ID', 'New co-owner user.'),
-	bodyString('deal', update, 'lostReason', 'Lost Reason', 'Required when moving the deal to a lost stage.'),
-	bodyString('deal', update, 'notes', 'Notes', 'New notes for the deal.'),
-	bodyJson('deal', update, 'tagIds', 'Tag IDs', 'Array of tag identifiers to associate with the deal.'),
-	bodyJson('deal', update, 'customFields', 'Custom Fields', 'Custom field values keyed by field slug.'),
-	bodyJson('deal', update, 'contact', 'Contact', 'Contact fields to update.'),
+	optionalFields('deal', update, 'updateFields', 'Fields to Update', 'Add only the values that should change.', [
+		{ displayName: 'Lead Name', name: 'name', type: 'string', default: '', routing: { send: { type: 'body', property: 'name' } } },
+		{ displayName: 'Value', name: 'value', type: 'number', default: 0, routing: { send: { type: 'body', property: 'value' } } },
+		{ displayName: 'Currency', name: 'currency', type: 'string', default: '', routing: { send: { type: 'body', property: 'currency' } } },
+		{ displayName: 'Close Probability', name: 'closeProbability', type: 'number', default: 0, typeOptions: { minValue: 0, maxValue: 100 }, routing: { send: { type: 'body', property: 'closeProbability' } } },
+		{ displayName: 'Expected Close At', name: 'expectedCloseAt', type: 'dateTime', default: '', routing: { send: { type: 'body', property: 'expectedCloseAt' } } },
+		{ displayName: 'Stage ID', name: 'stageId', type: 'string', default: '', routing: { send: { type: 'body', property: 'stageId' } } },
+		{ displayName: 'Company ID', name: 'companyId', type: 'string', default: '', routing: { send: { type: 'body', property: 'companyId' } } },
+		{ displayName: 'Responsible User ID', name: 'responsibleUserId', type: 'string', default: '', routing: { send: { type: 'body', property: 'responsibleUserId' } } },
+		{ displayName: 'Co-Owner User ID', name: 'coOwnerUserId', type: 'string', default: '', routing: { send: { type: 'body', property: 'coOwnerUserId' } } },
+		{ displayName: 'Lost Reason', name: 'lostReason', type: 'string', default: '', routing: { send: { type: 'body', property: 'lostReason' } } },
+		{ displayName: 'Notes', name: 'notes', type: 'string', default: '', routing: { send: { type: 'body', property: 'notes' } } },
+		{ displayName: 'Tag IDs', name: 'tagIds', type: 'json', default: '[]', routing: { send: { type: 'body', property: 'tagIds' } } },
+		{ displayName: 'Custom Fields', name: 'customFields', type: 'json', default: '{}', routing: { send: { type: 'body', property: 'customFields' } } },
+		{ displayName: 'Contact', name: 'contact', type: 'json', default: '{}', routing: { send: { type: 'body', property: 'contact' } } },
+	]),
 	bodyString('deal', 'addTag', 'tagId', 'Tag ID', 'Identifier of the tag to add.', { required: true }),
 	...cursorPagination('deal', 'getAll'),
 	...cursorPagination('deal', 'getCustomFieldValues'),
 	...cursorPagination('deal', 'getActivities'),
-	stringQuery('deal', 'getAll', 'stageId', 'Stage ID', 'Filter by stage identifier.'),
-	numberQuery('deal', 'getAll', 'pipeline', 'Pipeline Sequence', 0, 'Filter by workspace-scoped pipeline sequence.'),
-	{
-		displayName: 'Returning', name: 'returning', type: 'boolean', default: false, displayOptions: displayOptions('deal', 'getAll'),
-		routing: { send: { type: 'query', property: 'returning' } }, description: 'Whether to filter returning deals',
-	},
-	stringQuery('deal', 'getAll', 'createdFrom', 'Created From', 'Filter from date in yyyy-MM-dd format.'),
-	stringQuery('deal', 'getAll', 'createdTo', 'Created To', 'Filter through date in yyyy-MM-dd format.'),
-	stringQuery('deal', 'getAll', 'source', 'Source', 'Filter by deal source slug.'),
-	stringQuery('deal', 'getAll', 'responsibleUserIds', 'Responsible User IDs', 'Comma-separated responsible user identifiers.'),
-	stringQuery('deal', 'getAll', 'tagIds', 'Tag IDs', 'Comma-separated tag identifiers.'),
-	stringQuery('deal', 'getAll', 'search', 'Search', 'Search in deal, contact or phone.'),
-	stringQuery('deal', 'getAll', 'customFields[slug]', 'Custom Field Filter', 'Filter by a custom field value, using the field slug in the parameter name.'),
+	optionalFields('deal', 'getAll', 'filters', 'Filters', 'Add a filter only when you need to narrow the lead list.', [
+		{ displayName: 'Search', name: 'search', type: 'string', default: '', routing: { send: { type: 'query', property: 'search' } } },
+		{ displayName: 'Stage ID', name: 'stageId', type: 'string', default: '', routing: { send: { type: 'query', property: 'stageId' } } },
+		{ displayName: 'Pipeline Sequence', name: 'pipeline', type: 'number', default: 0, routing: { send: { type: 'query', property: 'pipeline' } } },
+		{ displayName: 'Returning', name: 'returning', type: 'boolean', default: false, routing: { send: { type: 'query', property: 'returning' } } },
+		{ displayName: 'Created From', name: 'createdFrom', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'createdFrom' } } },
+		{ displayName: 'Created To', name: 'createdTo', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'createdTo' } } },
+		{ displayName: 'Source', name: 'source', type: 'string', default: '', routing: { send: { type: 'query', property: 'source' } } },
+		{ displayName: 'Responsible User IDs', name: 'responsibleUserIds', type: 'string', default: '', routing: { send: { type: 'query', property: 'responsibleUserIds' } } },
+		{ displayName: 'Tag IDs', name: 'tagIds', type: 'string', default: '', routing: { send: { type: 'query', property: 'tagIds' } } },
+		{ displayName: 'Custom Field Filter', name: 'customFields[slug]', type: 'string', default: '', routing: { send: { type: 'query', property: 'customFields[slug]' } } },
+	]),
 	{
 		displayName: 'Status', name: 'status', type: 'multiOptions', default: [], displayOptions: displayOptions('deal', 'getCustomFieldValues'), options: [
 			{ name: 'Open', value: 'open' }, { name: 'Won', value: 'won' }, { name: 'Lost', value: 'lost' },
 		], routing: { send: { type: 'query', property: 'status' } }, description: 'Statuses to include. Leave empty for every status.',
 	},
-	stringQuery('deal', 'getCustomFieldValues', 'pipelineId', 'Pipeline ID', 'Filter by pipeline identifier.'),
-	stringQuery('deal', 'getCustomFieldValues', 'updatedFrom', 'Updated From', 'Incremental-load lower bound as an ISO instant or yyyy-MM-dd.'),
-	stringQuery('deal', 'getCustomFieldValues', 'updatedTo', 'Updated To', 'Exclusive upper bound as an ISO instant or yyyy-MM-dd.'),
-	{
-		displayName: 'Activity Type', name: 'type', type: 'string', default: '', displayOptions: displayOptions('deal', 'getActivities'), routing: { send: { type: 'query', property: 'type' } }, description: 'Comma-separated activity type filters',
-	},
-	{
-		displayName: 'Actor Type', name: 'actorType', type: 'string', default: '', displayOptions: displayOptions('deal', 'getActivities'), routing: { send: { type: 'query', property: 'actorType' } }, description: 'Comma-separated actor type filters',
-	},
-	stringQuery('deal', 'getActivities', 'actorUserId', 'Actor User ID', 'Filter by actor user identifier.'),
+	optionalFields('deal', 'getCustomFieldValues', 'customFieldValueFilters', 'Filters', 'Add filters only for incremental or scoped loads.', [
+		{ displayName: 'Pipeline ID', name: 'pipelineId', type: 'string', default: '', routing: { send: { type: 'query', property: 'pipelineId' } } },
+		{ displayName: 'Updated From', name: 'updatedFrom', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'updatedFrom' } } },
+		{ displayName: 'Updated To', name: 'updatedTo', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'updatedTo' } } },
+	]),
+	optionalFields('deal', 'getActivities', 'activityFilters', 'Filters', 'Add filters only when you need a narrower activity history.', [
+		{ displayName: 'Activity Type', name: 'type', type: 'string', default: '', routing: { send: { type: 'query', property: 'type' } } },
+		{ displayName: 'Actor Type', name: 'actorType', type: 'string', default: '', routing: { send: { type: 'query', property: 'actorType' } } },
+		{ displayName: 'Actor User ID', name: 'actorUserId', type: 'string', default: '', routing: { send: { type: 'query', property: 'actorUserId' } } },
+	]),
 ];

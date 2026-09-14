@@ -1,5 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-import { bodyJson, bodyString, cursorPagination, dataOutput, displayOptions, stringQuery } from './common';
+import { bodyString, cursorPagination, dataOutput, displayOptions, optionalFields } from './common';
 
 export const conversationsDescription: INodeProperties[] = [
 	{
@@ -17,29 +17,35 @@ export const conversationsDescription: INodeProperties[] = [
 		], routing: { send: { type: 'body', property: 'type' } }, description: 'Message type',
 	},
 	bodyString('conversation', 'sendMessage', 'text', 'Text', 'Text body. Required for a text message.'),
-	bodyString('conversation', 'sendMessage', 'channelId', 'Channel ID', 'Channel to send from. Takes precedence over Sender Phone Number ID.'),
-	bodyString('conversation', 'sendMessage', 'senderPhoneNumberId', 'Sender Phone Number ID', 'Provider phone number ID of the sending channel.'),
-	bodyString('conversation', 'sendMessage', 'mediaAssetId', 'Media Asset ID', 'Previously stored media asset identifier.'),
-	bodyString('conversation', 'sendMessage', 'mediaLink', 'Media Link', 'Public URL from which the provider can fetch the media.'),
-	bodyString('conversation', 'sendMessage', 'caption', 'Caption', 'Caption for media messages.'),
-	bodyString('conversation', 'sendMessage', 'filename', 'Filename', 'Filename for document messages.'),
-	bodyString('conversation', 'sendMessage', 'mimeType', 'MIME Type', 'MIME type of the media.'),
-	bodyString('conversation', 'sendMessage', 'templateName', 'Template Name', 'Approved WhatsApp template name.'),
-	bodyString('conversation', 'sendMessage', 'templateLanguageCode', 'Template Language Code', 'Language code for the template.'),
-	bodyJson('conversation', 'sendMessage', 'templateComponents', 'Template Components', 'Template component values.'),
-	bodyString('conversation', 'sendMessage', 'quotedMessageId', 'Quoted Message ID', 'Message identifier to reply to.'),
+	optionalFields('conversation', 'sendMessage', 'messageOptions', 'Message Options', 'Add the fields required by a media, template or reply message.', [
+		{ displayName: 'Channel ID', name: 'channelId', type: 'string', default: '', routing: { send: { type: 'body', property: 'channelId' } } },
+		{ displayName: 'Sender Phone Number ID', name: 'senderPhoneNumberId', type: 'string', default: '', routing: { send: { type: 'body', property: 'senderPhoneNumberId' } } },
+		{ displayName: 'Media Asset ID', name: 'mediaAssetId', type: 'string', default: '', routing: { send: { type: 'body', property: 'mediaAssetId' } } },
+		{ displayName: 'Media Link', name: 'mediaLink', type: 'string', default: '', routing: { send: { type: 'body', property: 'mediaLink' } } },
+		{ displayName: 'Caption', name: 'caption', type: 'string', default: '', routing: { send: { type: 'body', property: 'caption' } } },
+		{ displayName: 'Filename', name: 'filename', type: 'string', default: '', routing: { send: { type: 'body', property: 'filename' } } },
+		{ displayName: 'MIME Type', name: 'mimeType', type: 'string', default: '', routing: { send: { type: 'body', property: 'mimeType' } } },
+		{ displayName: 'Template Name', name: 'templateName', type: 'string', default: '', routing: { send: { type: 'body', property: 'templateName' } } },
+		{ displayName: 'Template Language Code', name: 'templateLanguageCode', type: 'string', default: '', routing: { send: { type: 'body', property: 'templateLanguageCode' } } },
+		{ displayName: 'Template Components', name: 'templateComponents', type: 'json', default: '[]', routing: { send: { type: 'body', property: 'templateComponents' } } },
+		{ displayName: 'Quoted Message ID', name: 'quotedMessageId', type: 'string', default: '', routing: { send: { type: 'body', property: 'quotedMessageId' } } },
+	]),
 	...cursorPagination('conversation', 'listConversations'),
-	stringQuery('conversation', 'listConversations', 'search', 'Search', 'Search conversations by contact or phone.'),
-	stringQuery('conversation', 'listConversations', 'filter', 'Filter', 'Filter by inbox state, such as unread.'),
-	stringQuery('conversation', 'listConversations', 'responsibleId', 'Responsible ID', 'Filter by responsible user.'),
-	stringQuery('conversation', 'listConversations', 'pipelineId', 'Pipeline ID', 'Filter by pipeline.'),
-	stringQuery('conversation', 'listConversations', 'stageId', 'Stage ID', 'Filter by stage.'),
-	stringQuery('conversation', 'listConversations', 'source', 'Source', 'Filter by lead source.'),
-	stringQuery('conversation', 'listConversations', 'channelIds', 'Channel IDs', 'Comma-separated channel identifiers.'),
+	optionalFields('conversation', 'listConversations', 'conversationFilters', 'Filters', 'Add a filter only when you need to narrow the conversation list.', [
+		{ displayName: 'Search', name: 'search', type: 'string', default: '', routing: { send: { type: 'query', property: 'search' } } },
+		{ displayName: 'Inbox State', name: 'filter', type: 'string', default: '', routing: { send: { type: 'query', property: 'filter' } } },
+		{ displayName: 'Responsible ID', name: 'responsibleId', type: 'string', default: '', routing: { send: { type: 'query', property: 'responsibleId' } } },
+		{ displayName: 'Pipeline ID', name: 'pipelineId', type: 'string', default: '', routing: { send: { type: 'query', property: 'pipelineId' } } },
+		{ displayName: 'Stage ID', name: 'stageId', type: 'string', default: '', routing: { send: { type: 'query', property: 'stageId' } } },
+		{ displayName: 'Source', name: 'source', type: 'string', default: '', routing: { send: { type: 'query', property: 'source' } } },
+		{ displayName: 'Channel IDs', name: 'channelIds', type: 'string', default: '', routing: { send: { type: 'query', property: 'channelIds' } } },
+	]),
 	{
 		displayName: 'Conversation Key', name: 'conversationKey', type: 'string', required: true, default: '', displayOptions: displayOptions('conversation', 'listMessages'), description: 'Conversation key returned by the conversation list',
 	},
 	...cursorPagination('conversation', 'listMessages'),
-	stringQuery('conversation', 'listMessages', 'channelId', 'Channel ID', 'Restrict messages to a channel.'),
-	stringQuery('conversation', 'listMessages', 'since', 'Since', 'Only messages at or after this ISO-8601 instant.'),
+	optionalFields('conversation', 'listMessages', 'messageFilters', 'Filters', 'Add filters only when you need a narrower message history.', [
+		{ displayName: 'Channel ID', name: 'channelId', type: 'string', default: '', routing: { send: { type: 'query', property: 'channelId' } } },
+		{ displayName: 'Since', name: 'since', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'since' } } },
+	]),
 ];

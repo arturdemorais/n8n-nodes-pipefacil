@@ -1,5 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-import { bodyJson, bodyString, dataOutput, displayOptions, pathString, stringQuery } from './common';
+import { bodyJson, bodyString, dataOutput, displayOptions, optionalFields, pathString, stringQuery } from './common';
 
 export const calendarDescription: INodeProperties[] = [
 	{
@@ -14,13 +14,11 @@ export const calendarDescription: INodeProperties[] = [
 	},
 	stringQuery('calendar', 'listEvents', 'timeMin', 'Time Min', 'Window start as an ISO-8601 UTC instant.'),
 	stringQuery('calendar', 'listEvents', 'timeMax', 'Time Max', 'Window end as an ISO-8601 UTC instant. Maximum 400 days after Time Min.'),
-	stringQuery('calendar', 'listEvents', 'memberId', 'Member ID', 'Optional workspace member whose agenda should be read.'),
-	{
-		displayName: 'Provider', name: 'provider', type: 'multiOptions', default: [], displayOptions: displayOptions('calendar', 'listEvents'), options: [{ name: 'Native', value: 'native' }, { name: 'Google', value: 'google' }], routing: { send: { type: 'query', property: 'provider' } }, description: 'Restrict results to one or more calendar providers',
-	},
-	{
-		displayName: 'Kind', name: 'kind', type: 'multiOptions', default: [], displayOptions: displayOptions('calendar', 'listEvents'), options: [{ name: 'Meeting', value: 'meeting' }, { name: 'Task', value: 'task' }, { name: 'Cadence Task', value: 'cadence_task' }], routing: { send: { type: 'query', property: 'kind' } }, description: 'Restrict results to one or more calendar item kinds',
-	},
+	optionalFields('calendar', 'listEvents', 'eventFilters', 'Filters', 'Add filters only when you need to narrow the event list.', [
+		{ displayName: 'Member ID', name: 'memberId', type: 'string', default: '', routing: { send: { type: 'query', property: 'memberId' } } },
+		{ displayName: 'Provider', name: 'provider', type: 'multiOptions', default: [], options: [{ name: 'Native', value: 'native' }, { name: 'Google', value: 'google' }], routing: { send: { type: 'query', property: 'provider' } } },
+		{ displayName: 'Kind', name: 'kind', type: 'multiOptions', default: [], options: [{ name: 'Meeting', value: 'meeting' }, { name: 'Task', value: 'task' }, { name: 'Cadence Task', value: 'cadence_task' }], routing: { send: { type: 'query', property: 'kind' } } },
+	]),
 	pathString('calendar', ['getMeeting', 'updateMeeting', 'deleteMeeting'], 'eventId', 'Event ID', "Event identifier in provider:kind:id form, for example native:meeting:5f2c…."),
 	bodyString('calendar', 'createMeeting', 'summary', 'Summary', 'Meeting title.', { required: true }),
 	bodyString('calendar', 'updateMeeting', 'summary', 'Summary', 'New meeting title.'),

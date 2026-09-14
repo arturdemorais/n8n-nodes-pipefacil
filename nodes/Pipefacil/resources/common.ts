@@ -24,6 +24,31 @@ export function dataOutput(property = 'data'): NonNullable<INodeProperties['rout
 	};
 }
 
+/**
+ * Keeps infrequently used request values out of the main form. The nested
+ * properties retain their individual routing, so selecting an option still
+ * sends the same API parameter as before.
+ */
+export function optionalFields(
+	resource: string,
+	operation: string | string[],
+	name: string,
+	displayName: string,
+	description: string,
+	options: INodeProperties[],
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'collection',
+		placeholder: 'Add option',
+		default: {},
+		displayOptions: displayOptions(resource, operation),
+		description,
+		options,
+	};
+}
+
 export function cursorPagination(
 	resource: string,
 	operation: string | string[],

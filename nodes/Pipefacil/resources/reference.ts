@@ -1,5 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
-import { cursorPagination, dataOutput, displayOptions, numberQuery, stringQuery } from './common';
+import { cursorPagination, dataOutput, displayOptions, optionalFields } from './common';
 
 export const referenceDescription: INodeProperties[] = [
 	{
@@ -14,14 +14,16 @@ export const referenceDescription: INodeProperties[] = [
 		default: 'listContacts',
 	},
 	...cursorPagination('reference', 'listContacts'),
-	stringQuery('reference', 'listContacts', 'search', 'Search', 'Search contacts by name or phone.'),
-	{
-		displayName: 'Query', name: 'query', type: 'string', default: '', displayOptions: displayOptions('reference', 'listCompanies'), routing: { send: { type: 'query', property: 'query' } }, description: 'Search companies by name or domain',
-	},
-	numberQuery('reference', 'listCompanies', 'page', 'Page', 0, 'Zero-based page number.'),
-	{
-		displayName: 'Page Size', name: 'size', type: 'number', default: 20, typeOptions: { minValue: 1, maxValue: 100 }, displayOptions: displayOptions('reference', 'listCompanies'), routing: { send: { type: 'query', property: 'size' } }, description: 'Number of companies per page',
-	},
-	stringQuery('reference', 'listCustomFields', 'entity', 'Entity', 'Filter by entity, for example deal or contact.'),
-	stringQuery('reference', 'listCustomFields', 'pipelineId', 'Pipeline ID', 'Filter custom fields by pipeline.'),
+	optionalFields('reference', 'listContacts', 'contactFilters', 'Filters', 'Add a filter only when you need to narrow the contact list.', [
+		{ displayName: 'Search', name: 'search', type: 'string', default: '', routing: { send: { type: 'query', property: 'search' } } },
+	]),
+	optionalFields('reference', 'listCompanies', 'companyFilters', 'Filters', 'Add a filter only when you need to narrow the company list.', [
+		{ displayName: 'Search', name: 'query', type: 'string', default: '', routing: { send: { type: 'query', property: 'query' } } },
+		{ displayName: 'Page', name: 'page', type: 'number', default: 0, typeOptions: { minValue: 0 }, routing: { send: { type: 'query', property: 'page' } } },
+		{ displayName: 'Page Size', name: 'size', type: 'number', default: 20, typeOptions: { minValue: 1, maxValue: 100 }, routing: { send: { type: 'query', property: 'size' } } },
+	]),
+	optionalFields('reference', 'listCustomFields', 'customFieldFilters', 'Filters', 'Add filters only when you need a scoped custom-field list.', [
+		{ displayName: 'Entity', name: 'entity', type: 'string', default: '', routing: { send: { type: 'query', property: 'entity' } } },
+		{ displayName: 'Pipeline ID', name: 'pipelineId', type: 'string', default: '', routing: { send: { type: 'query', property: 'pipelineId' } } },
+	]),
 ];
