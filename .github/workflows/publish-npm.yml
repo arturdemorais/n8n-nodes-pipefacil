@@ -45,6 +45,6 @@ jobs:
       - name: Publish to npm
         # The workflow already ran lint and build. Skip the local-only release
         # guard so this tag-based job can perform the actual publish.
-        run: npm publish --ignore-scripts --access public --provenance
+        run: npm publish --ignore-scripts --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
