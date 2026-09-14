@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-pipefacil",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Community node for integrating PipeFácil CRM with n8n workflows.",
   "license": "MIT",
   "homepage": "https://developers.matchsales.com.br/",
