@@ -4,6 +4,10 @@ import {
 	calendarDescription,
 	conversationsDescription,
 	dealsDescription,
+	getCustomDealFields,
+	getDealFields,
+	getPipelineOptions,
+	getStageOptions,
 	referenceDescription,
 } from './resources';
 
@@ -66,5 +70,16 @@ export class Pipefacil implements INodeType {
 			...conversationsDescription,
 			...cadencesDescription,
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			getPipelineOptions,
+			getStageOptions,
+		},
+		resourceMapping: {
+			getDealFields,
+			getCustomDealFields,
+		},
 	};
 }
