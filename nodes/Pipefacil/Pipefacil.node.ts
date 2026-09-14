@@ -11,7 +11,7 @@ export class Pipefacil implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'PipeFácil',
 		name: 'pipefacil',
-		icon: { light: 'file:pipefacil.svg', dark: 'file:pipefacil.dark.svg' },
+		icon: { light: 'file:favicon.svg', dark: 'file:favicon.dark.svg' },
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',

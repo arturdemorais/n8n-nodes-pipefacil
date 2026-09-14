@@ -12,8 +12,8 @@ export class PipefacilApi implements ICredentialType {
 	displayName = 'Pipefacil API';
 
 	icon: Icon = {
-		light: 'file:../nodes/Pipefacil/pipefacil.svg',
-		dark: 'file:../nodes/Pipefacil/pipefacil.dark.svg',
+		light: 'file:../nodes/Pipefacil/favicon.svg',
+		dark: 'file:../nodes/Pipefacil/favicon.dark.svg',
 	};
 
 	documentationUrl = 'https://developers.matchsales.com.br/developers/authentication/';
