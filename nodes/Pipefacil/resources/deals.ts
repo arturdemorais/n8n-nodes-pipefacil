@@ -114,11 +114,14 @@ export async function prepareCreateDealRequest(
 ): Promise<IHttpRequestOptions> {
 	const leadFields = getMapperValue(this.getNodeParameter('leadFields'));
 	const customFields = getMapperValue(this.getNodeParameter('customFields'));
+	const tracking = this.getNodeParameter('tracking');
+	const trackingFields = isRecord(tracking) ? tracking : {};
 
 	requestOptions.body = {
 		...(isRecord(requestOptions.body) ? requestOptions.body : {}),
 		...leadFields,
 		...(Object.keys(customFields).length > 0 ? { customFields } : {}),
+		...(Object.keys(trackingFields).length > 0 ? { tracking: trackingFields } : {}),
 	};
 
 	return requestOptions;
@@ -140,7 +143,6 @@ export async function getDealFields(): Promise<ResourceMapperFields> {
 			{ id: 'channelId', displayName: 'Channel ID', defaultMatch: false, required: false, display: true, removed: true },
 			{ id: 'responsibleUserId', displayName: 'Responsible User ID', defaultMatch: false, required: false, display: true, removed: true },
 			{ id: 'useAssignmentStrategy', displayName: 'Use Assignment Strategy', defaultMatch: false, required: false, display: true, removed: true, type: 'boolean' },
-			{ id: 'tracking', displayName: 'Tracking', defaultMatch: false, required: false, display: true, removed: true, type: 'object' },
 		],
 	};
 }
@@ -306,6 +308,23 @@ const createDealFields: INodeProperties[] = [
 		displayOptions: displayOptions('deal', create),
 		description: 'Choose a custom field with Add Custom Field. Select fields include their available options.',
 	},
+	optionalFields('deal', create, 'tracking', 'Tracking', 'Add only the marketing attribution available from the original visit.', [
+		{ displayName: 'UTM Source', name: 'utmSource', type: 'string', default: '' },
+		{ displayName: 'UTM Medium', name: 'utmMedium', type: 'string', default: '' },
+		{ displayName: 'UTM Campaign', name: 'utmCampaign', type: 'string', default: '' },
+		{ displayName: 'UTM Content', name: 'utmContent', type: 'string', default: '' },
+		{ displayName: 'UTM Term', name: 'utmTerm', type: 'string', default: '' },
+		{ displayName: 'UTM Referrer', name: 'utmReferrer', type: 'string', default: '' },
+		{ displayName: 'Referrer URL', name: 'referrer', type: 'string', default: '' },
+		{ displayName: 'Google Client ID', name: 'gclientid', type: 'string', default: '' },
+		{ displayName: 'Google Click ID', name: 'gclid', type: 'string', default: '' },
+		{ displayName: 'Meta Click ID', name: 'fbclid', type: 'string', default: '' },
+		{ displayName: 'Meta Lead Form ID', name: 'metaLeadId', type: 'string', default: '' },
+		{ displayName: 'Meta Browser ID', name: 'fbp', type: 'string', default: '' },
+		{ displayName: 'Meta Click Cookie', name: 'fbc', type: 'string', default: '' },
+		{ displayName: 'Client IP Address', name: 'clientIpAddress', type: 'string', default: '' },
+		{ displayName: 'Client User Agent', name: 'clientUserAgent', type: 'string', default: '' },
+	]),
 ];
 
 const dealLocator = (operations: string | string[]): INodeProperties => ({
