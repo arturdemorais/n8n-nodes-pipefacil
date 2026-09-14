@@ -1,0 +1,37 @@
+{
+  "name": "n8n-nodes-pipefacil",
+  "version": "0.1.0",
+  "description": "Community node for integrating PipeFácil CRM with n8n workflows.",
+  "license": "MIT",
+  "homepage": "https://developers.matchsales.com.br/",
+  "keywords": ["n8n-community-node-package"],
+  "author": { "name": "Artur Morais", "email": "artur@grupovorp.com" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matchSales/n8n-nodes-pipefacil.git"
+  },
+  "scripts": {
+    "build": "n8n-node build",
+    "build:watch": "tsc --watch",
+    "dev": "n8n-node dev",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "release": "n8n-node release",
+    "prepublishOnly": "n8n-node prerelease"
+  },
+  "files": ["dist"],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": ["dist/credentials/PipefacilApi.credentials.js"],
+    "nodes": ["dist/nodes/Pipefacil/Pipefacil.node.js"]
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "*",
+    "eslint": "9.32.0",
+    "prettier": "3.6.2",
+    "release-it": "^19.0.4",
+    "typescript": "5.9.2"
+  },
+  "peerDependencies": { "n8n-workflow": "*" }
+}
