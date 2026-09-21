@@ -321,6 +321,18 @@ const createDealFields: INodeProperties[] = [
 		displayOptions: displayOptions('deal', create),
 		description: 'Choose a custom field with Add Custom Field. Select fields include their available options.',
 	},
+	{
+		displayName: 'Tag Names or IDs',
+		name: 'tagIds',
+		type: 'multiOptions',
+		default: [],
+		typeOptions: {
+			loadOptionsMethod: 'getTagOptions',
+		},
+		displayOptions: displayOptions('deal', create),
+		routing: { send: { type: 'body', property: 'tagIds' } },
+		description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+	},
 	optionalFields('deal', create, 'tracking', 'Tracking', 'Add only the marketing attribution available from the original visit.', [
 		{ displayName: 'UTM Source', name: 'utmSource', type: 'string', default: '' },
 		{ displayName: 'UTM Medium', name: 'utmMedium', type: 'string', default: '' },
