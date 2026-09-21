@@ -6,6 +6,7 @@ import {
 	getDealFields,
 	getPipelineOptions,
 	getStageOptions,
+	getTagOptions,
 	searchDeals,
 	referenceDescription,
 } from './resources';
@@ -65,6 +66,7 @@ export class Pipefacil implements INodeType {
 		loadOptions: {
 			getPipelineOptions,
 			getStageOptions,
+			getTagOptions,
 		},
 		listSearch: {
 			searchDeals,

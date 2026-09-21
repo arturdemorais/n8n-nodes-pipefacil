@@ -9,7 +9,7 @@ import type {
 	ResourceMapperField,
 	ResourceMapperFields,
 } from 'n8n-workflow';
-import { bodyString, cursorPagination, dataOutput, displayOptions, optionalFields, pathString } from './common';
+import { cursorPagination, dataOutput, displayOptions, optionalFields } from './common';
 
 const create = 'create';
 const update = 'update';
@@ -176,6 +176,19 @@ export async function getStageOptions(this: ILoadOptionsFunctions): Promise<INod
 
 		const id = getString(stage.id);
 		const name = getString(stage.name) ?? id;
+		return id && name ? [{ name, value: id }] : [];
+	});
+}
+
+export async function getTagOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	const response = await this.helpers.httpRequestWithAuthentication.call(this, 'pipefacilApi', {
+		method: 'GET',
+		url: `${apiBaseUrl}/tags`,
+	});
+
+	return getResponseData(response).flatMap((tag) => {
+		const id = getScalar(tag.id);
+		const name = getString(tag.name) ?? getString(tag.label) ?? id;
 		return id && name ? [{ name, value: id }] : [];
 	});
 }
@@ -371,7 +384,18 @@ export const dealsDescription: INodeProperties[] = [
 		default: 'getAll',
 	},
 	dealLocator([get, update, 'addTag', 'removeTag', 'getActivities']),
-	pathString('deal', 'removeTag', 'tagId', 'Tag ID', 'Identifier of the tag to remove.'),
+	{
+		displayName: 'Tag Name or ID',
+		name: 'tagId',
+		type: 'options',
+		required: true,
+		default: '',
+		typeOptions: {
+			loadOptionsMethod: 'getTagOptions',
+		},
+		displayOptions: displayOptions('deal', 'removeTag'),
+		description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+	},
 	...createDealFields,
 	optionalFields('deal', update, 'updateFields', 'Fields to Update', 'Add only the values that should change.', [
 		{ displayName: 'Lead Name', name: 'name', type: 'string', default: '', routing: { send: { type: 'body', property: 'name' } } },
@@ -389,7 +413,19 @@ export const dealsDescription: INodeProperties[] = [
 		{ displayName: 'Custom Fields', name: 'customFields', type: 'json', default: '{}', routing: { send: { type: 'body', property: 'customFields' } } },
 		{ displayName: 'Contact', name: 'contact', type: 'json', default: '{}', routing: { send: { type: 'body', property: 'contact' } } },
 	]),
-	bodyString('deal', 'addTag', 'tagId', 'Tag ID', 'Identifier of the tag to add.', { required: true }),
+	{
+		displayName: 'Tag Name or ID',
+		name: 'tagId',
+		type: 'options',
+		required: true,
+		default: '',
+		typeOptions: {
+			loadOptionsMethod: 'getTagOptions',
+		},
+		displayOptions: displayOptions('deal', 'addTag'),
+		routing: { send: { type: 'body', property: 'tagId' } },
+		description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+	},
 	...cursorPagination('deal', 'getAll'),
 	...cursorPagination('deal', 'getCustomFieldValues'),
 	...cursorPagination('deal', 'getActivities'),
