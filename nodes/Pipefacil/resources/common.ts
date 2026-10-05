@@ -1,4 +1,4 @@
-import type { INodeProperties } from 'n8n-workflow';
+import type { IDataObject, INodeProperties } from 'n8n-workflow';
 
 export function displayOptions(resource: string, operation?: string | string[]) {
 	return {
@@ -55,6 +55,7 @@ export function cursorPagination(
 	rootProperty = 'data.items',
 ): INodeProperties[] {
 	const show = displayOptions(resource, operation);
+	const page = rootProperty === 'data' ? '$response.body' : '$response.body?.data';
 
 	return [
 		{
@@ -71,7 +72,7 @@ export function cursorPagination(
 				send: { type: 'query', property: 'limit' },
 				output: {
 					postReceive: [
-						{ type: 'rootProperty', properties: { property: rootProperty } },
+						{ type: 'rootProperty', enabled: '={{!$parameter.returnAll}}', properties: { property: rootProperty } },
 						{ type: 'limit', properties: { maxResults: '={{$value}}' } },
 					],
 				},
@@ -85,20 +86,21 @@ export function cursorPagination(
 			default: false,
 			displayOptions: show,
 			routing: {
-				send: { paginate: '={{$value}}' },
+				send: { type: 'query', property: 'limit', value: '={{$value ? 200 : $parameter.limit}}', paginate: '={{$value}}' },
 				operations: {
 					pagination: {
 						type: 'generic',
 						properties: {
-							continue: '={{$response.body.data.hasMore}}',
+							continue: `={{${page}.hasMore === true && !!${page}.nextCursor}}`,
 							request: {
-								qs: { cursor: '={{$response.body.data.nextCursor}}' },
+								// n8n resolves expressions on the whole query object before sending it.
+								qs: `={{ {...$request.qs, cursor: ${page}?.nextCursor ?? $request.qs.cursor} }}` as unknown as IDataObject,
 							},
 						},
 					},
 				},
 				output: {
-					postReceive: [{ type: 'rootProperty', properties: { property: rootProperty } }],
+					postReceive: [{ type: 'rootProperty', enabled: '={{$value}}', properties: { property: rootProperty } }],
 				},
 			},
 			description: 'Whether to return all results or only up to a given limit',

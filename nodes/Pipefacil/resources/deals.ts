@@ -36,6 +36,9 @@ function getResponseData(response: unknown): ApiRecord[] {
 }
 
 function getListItems(response: unknown): ApiRecord[] {
+	if (isRecord(response) && Array.isArray(response.data)) {
+		return response.data.filter(isRecord);
+	}
 	if (!isRecord(response) || !isRecord(response.data) || !Array.isArray(response.data.items)) {
 		return [];
 	}
@@ -207,8 +210,8 @@ export async function searchDeals(
 	});
 
 	return {
-		...(isRecord(response) && isRecord(response.data) && response.data.hasMore === true
-			? { paginationToken: getString(response.data.nextCursor) } : {}),
+		...(isRecord(response) && (response.hasMore === true || (isRecord(response.data) && response.data.hasMore === true))
+			? { paginationToken: getString(response.nextCursor) ?? (isRecord(response.data) ? getString(response.data.nextCursor) : undefined) } : {}),
 		results: getListItems(response).flatMap((deal) => {
 			const sequence = getScalar(deal.seq ?? deal.sequence);
 			if (!sequence) {
@@ -478,7 +481,7 @@ export const dealsDescription: INodeProperties[] = [
 		routing: { send: { type: 'body', property: 'tagId' } },
 		description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 	},
-	...cursorPagination('deal', 'getAll'),
+	...cursorPagination('deal', 'getAll', 'data'),
 	...cursorPagination('deal', 'getCustomFieldValues'),
 	...cursorPagination('deal', 'getActivities'),
 	optionalFields('deal', 'getAll', 'filters', 'Filters', 'Add a filter only when you need to narrow the lead list.', [
