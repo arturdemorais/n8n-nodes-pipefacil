@@ -2,6 +2,8 @@ import type {
 	IDataObject,
 	IExecuteSingleFunctions,
 	IHttpRequestOptions,
+	IN8nHttpFullResponse,
+	INodeExecutionData,
 	INodeListSearchResult,
 	ILoadOptionsFunctions,
 	INodeProperties,
@@ -10,6 +12,7 @@ import type {
 	ResourceMapperFields,
 } from 'n8n-workflow';
 import { cursorPagination, dataOutput, displayOptions, optionalFields } from './common';
+import { NodeOperationError } from 'n8n-workflow';
 
 const create = 'create';
 const update = 'update';
@@ -109,6 +112,41 @@ function getMapperValue(value: unknown): IDataObject {
 	}
 
 	return value.value;
+}
+
+export async function updateCreatedDealContact(
+	this: IExecuteSingleFunctions,
+	items: INodeExecutionData[],
+	response: IN8nHttpFullResponse,
+): Promise<INodeExecutionData[]> {
+	const input: unknown = this.getNodeParameter('leadFields', {});
+	const fields = isRecord(input) && isRecord(input.value) ? getMapperValue(input) : isRecord(input) ? input : {};
+	const contact: IDataObject = {};
+	for (const [source, target] of [['email', 'email'], ['contactFirstName', 'firstName'], ['contactLastName', 'lastName']]) {
+		const value = fields[source];
+		if (typeof value === 'string' && value.trim()) contact[target] = value.trim();
+	}
+	if (fields.contactFirstName === undefined && fields.contactLastName === undefined && typeof fields.contactName === 'string' && fields.contactName.trim()) {
+		const name = fields.contactName.trim();
+		const separator = name.indexOf(' ');
+		contact.firstName = separator < 0 ? name : name.slice(0, separator);
+		if (separator >= 0) contact.lastName = name.slice(separator + 1).trim();
+	}
+	if (!Object.keys(contact).length) return items;
+	const deal = isRecord(response.body) && isRecord(response.body.data) ? response.body.data : undefined;
+	if (!deal || !deal.contactId || !Number.isInteger(deal.seq) || Number(deal.seq) <= 0) {
+		throw new NodeOperationError(this.getNode(), 'The lead was created, but its contact could not be updated because the API did not return a contact ID and lead sequence. Check the created lead before retrying.');
+	}
+	try {
+		await this.helpers.httpRequestWithAuthentication.call(this, 'pipefacilApi', {
+			method: 'PATCH',
+			url: `${apiBaseUrl}/deals/${deal.seq}`,
+			body: { contact },
+		});
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Lead #${deal.seq} was created, but its contact could not be updated: ${error instanceof Error ? error.message : 'API request failed'}. Check the lead before retrying to avoid duplicates.`);
+	}
+	return items;
 }
 
 export async function prepareCreateDealRequest(
@@ -427,7 +465,7 @@ export const dealsDescription: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: displayOptions('deal'),
 		options: [
-			{ name: 'Create', value: create, action: 'Create a deal', description: 'Create a new deal', routing: { request: { method: 'POST', url: '/deals' }, send: { preSend: [prepareCreateDealRequest] } } },
+			{ name: 'Create', value: create, action: 'Create a deal', description: 'Create a new deal', routing: { request: { method: 'POST', url: '/deals' }, send: { preSend: [prepareCreateDealRequest] }, output: { postReceive: [updateCreatedDealContact] } } },
 			{ name: 'Get', value: get, action: 'Get a deal', description: 'Get one lead', routing: { request: { method: 'GET', url: '=/deals/{{$parameter.deal.value}}' }, ...dataOutput() } },
 			{ name: 'Get Many', value: 'getAll', action: 'Get deals', description: 'List deals across statuses and search by contact or phone', routing: { request: { method: 'GET', url: '/deals' }, send: { preSend: [prepareDealFilters] } } },
 			{ name: 'List Custom Field Values', value: 'getCustomFieldValues', action: 'List deal custom field values', description: 'List custom field values across deal statuses', routing: { request: { method: 'GET', url: '/deals/custom-field-values' } } },

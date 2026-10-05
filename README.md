@@ -46,6 +46,8 @@ Compatível com n8n que suporte community nodes declarativos e a API de credenci
 
 ## Usage
 
+Ao criar um lead, o node também atualiza o nome e o e-mail preenchidos no contato vinculado, inclusive quando ele já existe. Campos de contato omitidos ou vazios são preservados. Essa atualização usa uma segunda requisição e exige `deals.edit`, além da permissão de criação. Se ela falhar, o erro informa o número do lead já criado: confira esse lead antes de executar novamente para evitar duplicatas. Esse comportamento se aplica às versões 1 e 1.1 do node.
+
 1. Instale o pacote como community node no n8n
 2. Crie a credencial `Pipefacil API`
 3. Adicione o node `PipeFácil` ao workflow
