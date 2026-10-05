@@ -84,7 +84,7 @@ function toOption(value: unknown): INodePropertyOptions | undefined {
 function customFieldType(fieldType: unknown): ResourceMapperField['type'] {
 	const type = String(fieldType ?? '').toLowerCase();
 
-	if (type.includes('select') || type === 'dropdown' || type === 'radio') {
+	if (type.includes('select') || type === 'dropdown' || type === 'radio' || type === 'members') {
 		return 'options';
 	}
 	if (type.includes('boolean') || type === 'checkbox') {
@@ -130,9 +130,11 @@ export async function prepareCreateDealRequest(
 export async function getDealFields(): Promise<ResourceMapperFields> {
 	return {
 		fields: [
-			{ id: 'phone', displayName: 'Phone', defaultMatch: false, required: true, display: true },
+			{ id: 'phone', displayName: 'Phone', defaultMatch: false, required: false, display: true, removed: true },
 			{ id: 'name', displayName: 'Deal Name', defaultMatch: false, required: false, display: true, removed: true },
 			{ id: 'contactName', displayName: 'Contact Name', defaultMatch: false, required: false, display: true, removed: true },
+			{ id: 'contactFirstName', displayName: 'Contact First Name', defaultMatch: false, required: false, display: true, removed: true },
+			{ id: 'contactLastName', displayName: 'Contact Last Name', defaultMatch: false, required: false, display: true, removed: true },
 			{ id: 'email', displayName: 'Email', defaultMatch: false, required: false, display: true, removed: true },
 			{ id: 'notes', displayName: 'Notes', defaultMatch: false, required: false, display: true, removed: true },
 			{ id: 'value', displayName: 'Value', defaultMatch: false, required: false, display: true, removed: true, type: 'number' },
@@ -196,21 +198,25 @@ export async function getTagOptions(this: ILoadOptionsFunctions): Promise<INodeP
 export async function searchDeals(
 	this: ILoadOptionsFunctions,
 	filter?: string,
+	paginationToken?: string,
 ): Promise<INodeListSearchResult> {
 	const response = await this.helpers.httpRequestWithAuthentication.call(this, 'pipefacilApi', {
 		method: 'GET',
 		url: `${apiBaseUrl}/deals`,
-		qs: { limit: 50, ...(filter ? { search: filter } : {}) },
+		qs: { limit: 50, ...(filter ? { search: filter } : {}), ...(paginationToken ? { cursor: paginationToken } : {}) },
 	});
 
 	return {
+		...(isRecord(response) && isRecord(response.data) && response.data.hasMore === true
+			? { paginationToken: getString(response.data.nextCursor) } : {}),
 		results: getListItems(response).flatMap((deal) => {
 			const sequence = getScalar(deal.seq ?? deal.sequence);
 			if (!sequence) {
 				return [];
 			}
 
-			const name = getString(deal.name) ?? getString(deal.contactName) ?? getString(deal.phone);
+			const contact = isRecord(deal.contact) ? deal.contact : {};
+			const name = getString(deal.name) ?? getString(deal.contactName) ?? getString(contact.firstName) ?? getString(deal.phone) ?? getString(contact.phone);
 			return [{ name: name ? `${name} (#${sequence})` : `Lead #${sequence}`, value: sequence }];
 		}),
 	};
@@ -237,7 +243,7 @@ export async function getCustomDealFields(this: ILoadOptionsFunctions): Promise<
 
 			const type = customFieldType(field.fieldType);
 			const options = type === 'options' && Array.isArray(field.options)
-				? field.options.flatMap((option) => {
+				? field.options.filter((option) => !isRecord(option) || option.inactive !== true).flatMap((option) => {
 					const mappedOption = toOption(option);
 					return mappedOption ? [mappedOption] : [];
 				})
@@ -255,6 +261,40 @@ export async function getCustomDealFields(this: ILoadOptionsFunctions): Promise<
 			}];
 		}),
 	};
+}
+
+export async function prepareDealFilters(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	const filters = this.getNodeParameter('filters', {}) as IDataObject;
+	const qs = { ...requestOptions.qs };
+	const fields = filters.customFieldFilters;
+	if (isRecord(fields) && Array.isArray(fields.filters)) {
+		for (const filter of fields.filters) {
+			if (!isRecord(filter) || typeof filter.slug !== 'string' || !filter.slug.trim()) {
+				throw new Error('Custom field filters require a field slug');
+			}
+			const key = `customFields[${filter.slug.trim()}]`;
+			const value = String(filter.value ?? '');
+			const previous = qs[key];
+			qs[key] = previous === undefined ? value : [...(Array.isArray(previous) ? previous : [previous]), value];
+		}
+	}
+	const ranges = filters.customFieldRanges;
+	if (isRecord(ranges) && Array.isArray(ranges.ranges)) {
+		for (const range of ranges.ranges) {
+			if (!isRecord(range) || typeof range.slug !== 'string' || !range.slug.trim()) {
+				throw new Error('Custom field date ranges require a field slug');
+			}
+			for (const bound of ['from', 'to']) {
+				if (range[bound]) qs[`customFieldRanges[${range.slug.trim()}][${bound}]`] = String(range[bound]);
+			}
+		}
+	}
+	requestOptions.qs = qs;
+	requestOptions.arrayFormat = 'repeat';
+	return requestOptions;
 }
 
 const createDealFields: INodeProperties[] = [
@@ -300,7 +340,7 @@ const createDealFields: INodeProperties[] = [
 			},
 		},
 		displayOptions: displayOptions('deal', create),
-		description: 'Phone is required. Use Add Field to include only the standard fields you need.',
+		description: 'Phone is optional. Use Add Field to include only the standard fields you need.',
 	},
 	{
 		displayName: 'Custom Fields',
@@ -352,13 +392,13 @@ const createDealFields: INodeProperties[] = [
 	]),
 ];
 
-const dealLocator = (operations: string | string[]): INodeProperties => ({
+export const dealLocator = (operations: string | string[], resource = 'deal'): INodeProperties => ({
 	displayName: 'Lead',
 	name: 'deal',
 	type: 'resourceLocator',
 	default: { mode: 'list', value: '' },
 	required: true,
-	displayOptions: displayOptions('deal', operations),
+	displayOptions: displayOptions(resource, operations),
 	description: 'Choose a lead, or switch to By Sequence to use a value from another node',
 	modes: [
 		{
@@ -386,7 +426,7 @@ export const dealsDescription: INodeProperties[] = [
 		options: [
 			{ name: 'Create', value: create, action: 'Create a deal', description: 'Create a new deal', routing: { request: { method: 'POST', url: '/deals' }, send: { preSend: [prepareCreateDealRequest] } } },
 			{ name: 'Get', value: get, action: 'Get a deal', description: 'Get one lead', routing: { request: { method: 'GET', url: '=/deals/{{$parameter.deal.value}}' }, ...dataOutput() } },
-			{ name: 'Get Many', value: 'getAll', action: 'Get deals', description: 'List open deals', routing: { request: { method: 'GET', url: '/deals' } } },
+			{ name: 'Get Many', value: 'getAll', action: 'Get deals', description: 'List deals across statuses and search by contact or phone', routing: { request: { method: 'GET', url: '/deals' }, send: { preSend: [prepareDealFilters] } } },
 			{ name: 'List Custom Field Values', value: 'getCustomFieldValues', action: 'List deal custom field values', description: 'List custom field values across deal statuses', routing: { request: { method: 'GET', url: '/deals/custom-field-values' } } },
 			{ name: 'Update', value: update, action: 'Update a deal', description: 'Update a deal or move it between stages', routing: { request: { method: 'PATCH', url: '=/deals/{{$parameter.deal.value}}' }, ...dataOutput() } },
 			{ name: 'Add Tag', value: 'addTag', action: 'Add a deal tag', description: 'Add a tag to a deal', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/tags' }, ...dataOutput() } },
@@ -442,16 +482,31 @@ export const dealsDescription: INodeProperties[] = [
 	...cursorPagination('deal', 'getCustomFieldValues'),
 	...cursorPagination('deal', 'getActivities'),
 	optionalFields('deal', 'getAll', 'filters', 'Filters', 'Add a filter only when you need to narrow the lead list.', [
-		{ displayName: 'Search', name: 'search', type: 'string', default: '', routing: { send: { type: 'query', property: 'search' } } },
+		{ displayName: 'Search (Name, Contact or Phone)', name: 'search', type: 'string', default: '', description: 'Search by lead name, contact name or phone number', routing: { send: { type: 'query', property: 'search' } } },
 		{ displayName: 'Stage ID', name: 'stageId', type: 'string', default: '', routing: { send: { type: 'query', property: 'stageId' } } },
 		{ displayName: 'Pipeline Sequence', name: 'pipeline', type: 'number', default: 0, routing: { send: { type: 'query', property: 'pipeline' } } },
 		{ displayName: 'Returning', name: 'returning', type: 'boolean', default: false, routing: { send: { type: 'query', property: 'returning' } } },
-		{ displayName: 'Created From', name: 'createdFrom', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'createdFrom' } } },
-		{ displayName: 'Created To', name: 'createdTo', type: 'dateTime', default: '', routing: { send: { type: 'query', property: 'createdTo' } } },
+		{ displayName: 'Created From', name: 'createdFrom', type: 'string', default: '', description: 'Date in yyyy-MM-dd format', routing: { send: { type: 'query', property: 'createdFrom' } } },
+		{ displayName: 'Created To', name: 'createdTo', type: 'string', default: '', description: 'Date in yyyy-MM-dd format', routing: { send: { type: 'query', property: 'createdTo' } } },
 		{ displayName: 'Source', name: 'source', type: 'string', default: '', routing: { send: { type: 'query', property: 'source' } } },
 		{ displayName: 'Responsible User IDs', name: 'responsibleUserIds', type: 'string', default: '', routing: { send: { type: 'query', property: 'responsibleUserIds' } } },
 		{ displayName: 'Tag IDs', name: 'tagIds', type: 'string', default: '', routing: { send: { type: 'query', property: 'tagIds' } } },
-		{ displayName: 'Custom Field Filter', name: 'customFields[slug]', type: 'string', default: '', routing: { send: { type: 'query', property: 'customFields[slug]' } } },
+		{ displayName: 'Status', name: 'status', type: 'multiOptions', default: [], options: [
+			{ name: 'Open', value: 'open' }, { name: 'Won', value: 'won' }, { name: 'Lost', value: 'lost' },
+		], routing: { send: { type: 'query', property: 'status', value: '={{$value.join(",")}}' } } },
+		{ displayName: 'Custom Field Filters', name: 'customFieldFilters', type: 'fixedCollection', default: {}, typeOptions: { multipleValues: true }, placeholder: 'Add Custom Field Filter', options: [
+			{ displayName: 'Filter', name: 'filters', values: [
+				{ displayName: 'Field Slug', name: 'slug', type: 'string', default: '', required: true, description: 'Slug from Reference → List Custom Fields, for example budget' },
+				{ displayName: 'Value', name: 'value', type: 'string', default: '', description: 'Value to match. Use __empty__ for unfilled fields. Repeat a slug to match any of its values.' },
+			] },
+		] },
+		{ displayName: 'Custom Field Date Ranges', name: 'customFieldRanges', type: 'fixedCollection', default: {}, typeOptions: { multipleValues: true }, placeholder: 'Add Date Range', options: [
+			{ displayName: 'Range', name: 'ranges', values: [
+				{ displayName: 'Field Slug', name: 'slug', type: 'string', default: '', required: true },
+				{ displayName: 'From', name: 'from', type: 'string', default: '', description: 'Start date, for example 2026-10-01. Leave empty for no lower bound.' },
+				{ displayName: 'To', name: 'to', type: 'string', default: '', description: 'End date, for example 2026-10-31. Leave empty for no upper bound.' },
+			] },
+		] },
 	]),
 	{
 		displayName: 'Status', name: 'status', type: 'multiOptions', default: [], displayOptions: displayOptions('deal', 'getCustomFieldValues'), options: [

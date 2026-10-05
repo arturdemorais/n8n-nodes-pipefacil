@@ -9,3 +9,6 @@ export {
 	searchDeals,
 } from './deals';
 export { referenceDescription } from './reference';
+
+export { notesDescription } from './notes';
+export { tasksDescription } from './tasks';

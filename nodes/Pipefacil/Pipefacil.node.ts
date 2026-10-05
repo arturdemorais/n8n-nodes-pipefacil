@@ -1,6 +1,10 @@
-import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from 'n8n-workflow';
+import * as choices from './resources/choices';
+import { modernProperties, messageExtras, updateExtras, getCustomUpdateFields } from './resources/simple';
+import { NodeConnectionTypes, type INodeType, type INodeTypeDescription, type INodeProperties } from 'n8n-workflow';
 import {
 	conversationsDescription,
+	notesDescription,
+	tasksDescription,
 	dealsDescription,
 	getCustomDealFields,
 	getDealFields,
@@ -11,15 +15,21 @@ import {
 	referenceDescription,
 } from './resources';
 
+const legacyProperties = [...dealsDescription, ...notesDescription, ...tasksDescription, ...referenceDescription, ...conversationsDescription];
+const simpleProperties = [...modernProperties(legacyProperties), ...messageExtras, ...updateExtras(dealsDescription.find((p) => p.name === 'customFields')!)];
+function forVersion(properties: INodeProperties[], modern: boolean): INodeProperties[] {
+	return properties.map((property) => ({ ...property, displayOptions: { ...property.displayOptions, show: { ...property.displayOptions?.show, '@version': modern ? [1.1] : [1] } } }));
+}
+
 export class Pipefacil implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'PipeFácil',
 		name: 'pipefacil',
 		icon: { light: 'file:favicon.svg', dark: 'file:favicon.dark.svg' },
 		group: ['transform'],
-		version: 1,
+		version: [1, 1.1],
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Use the PipeFácil public API to manage deals, conversations and workspace references.',
+		description: 'Use the PipeFácil public API to manage deals, tasks, notes, conversations and workspace references.',
 		defaults: {
 			name: 'PipeFácil',
 		},
@@ -50,30 +60,44 @@ export class Pipefacil implements INodeType {
 						value: 'deal',
 					},
 					{
+						name: 'Note',
+						value: 'note',
+					},
+					{
 						name: 'Reference',
 						value: 'reference',
 					},
+					{ name: 'Task', value: 'task' },
 				],
 				default: 'deal',
 			},
-			...dealsDescription,
-			...referenceDescription,
-			...conversationsDescription,
+			...forVersion(legacyProperties, false),
+			...forVersion(simpleProperties, true),
 		],
 	};
 
 	methods = {
 		loadOptions: {
+			getUserOptions: choices.getUserOptions,
+			getPipelineSequenceOptions: choices.getPipelineSequenceOptions,
+			getAllStageOptions: choices.getAllStageOptions,
+			getCustomFieldOptions: choices.getCustomFieldOptions,
+			getDateFieldOptions: choices.getDateFieldOptions,
+			getCustomFilterValueOptions: choices.getCustomFilterValueOptions,
 			getPipelineOptions,
 			getStageOptions,
 			getTagOptions,
 		},
 		listSearch: {
 			searchDeals,
+			searchCompanies: choices.searchCompanies,
+			searchConversations: choices.searchConversations,
+			searchContacts: choices.searchContacts,
 		},
 		resourceMapping: {
 			getDealFields,
 			getCustomDealFields,
+			getCustomUpdateFields,
 		},
 	};
 }

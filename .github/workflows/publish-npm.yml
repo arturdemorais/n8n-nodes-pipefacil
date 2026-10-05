@@ -39,8 +39,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Build
-        run: npm run build
+      - name: Test and build
+        run: npm test
 
       - name: Publish to npm
         # The workflow already ran lint and build. Skip the local-only release
