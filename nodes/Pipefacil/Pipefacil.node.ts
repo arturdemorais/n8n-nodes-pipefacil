@@ -2,7 +2,15 @@ import * as choices from './resources/choices';
 import { modernProperties, messageExtras, updateExtras, getCustomUpdateFields } from './resources/simple';
 import { NodeConnectionTypes, type INodeType, type INodeTypeDescription, type INodeProperties } from 'n8n-workflow';
 import {
+	contactsDescription,
 	conversationsDescription,
+	customFieldsDescription,
+	getChoiceFieldOptions,
+	getCustomFieldIdOptions,
+	getFieldChoiceOptions,
+	getVisibilityParentOptions,
+	getVisibilityValueOptions,
+	searchContactRecords,
 	notesDescription,
 	tasksDescription,
 	dealsDescription,
@@ -29,7 +37,7 @@ export class Pipefacil implements INodeType {
 		group: ['transform'],
 		version: [1, 1.1],
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Use the PipeFácil public API to manage deals, tasks, notes, conversations and workspace references.',
+		description: 'Use the PipeFácil public API to manage deals, contacts, custom fields, tasks, notes, conversations and workspace references.',
 		defaults: {
 			name: 'PipeFácil',
 		},
@@ -51,10 +59,12 @@ export class Pipefacil implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
+					{ name: 'Contact', value: 'contact' },
 					{
 						name: 'Conversation',
 						value: 'conversation',
 					},
+					{ name: 'Custom Field', value: 'customField' },
 					{
 						name: 'Deal',
 						value: 'deal',
@@ -73,6 +83,9 @@ export class Pipefacil implements INodeType {
 			},
 			...forVersion(legacyProperties, false),
 			...forVersion(simpleProperties, true),
+			// Added after version 1.1 already used selectors, so both versions share the same inputs.
+			...contactsDescription,
+			...customFieldsDescription,
 		],
 	};
 
@@ -87,12 +100,18 @@ export class Pipefacil implements INodeType {
 			getPipelineOptions,
 			getStageOptions,
 			getTagOptions,
+			getCustomFieldIdOptions,
+			getChoiceFieldOptions,
+			getFieldChoiceOptions,
+			getVisibilityParentOptions,
+			getVisibilityValueOptions,
 		},
 		listSearch: {
 			searchDeals,
 			searchCompanies: choices.searchCompanies,
 			searchConversations: choices.searchConversations,
 			searchContacts: choices.searchContacts,
+			searchContactRecords,
 		},
 		resourceMapping: {
 			getDealFields,

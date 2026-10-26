@@ -23,6 +23,8 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 O node é declarativo e cobre as rotas públicas documentadas do PipeFácil:
 
 - Deals: criar, consultar, listar, atualizar, adicionar/remover tags e listar atividades
+- Contact: criar, consultar, listar com filtros, atualizar, excluir e enviar/remover foto
+- Custom Field: criar, consultar, listar, atualizar e excluir campos, além de adicionar, editar e remover opções
 - Reference: contatos, empresas, funis, tags, campos personalizados e usuários
 - Conversations: enviar mensagens e listar conversas/mensagens
 - Task: criar tarefa pendente vinculada a um lead
@@ -67,6 +69,9 @@ Novos nodes usam a versão **1.1**. Workflows da versão **1** mantêm seus form
 - **Filtros personalizados:** escolha o campo pelo nome e **Match → Value**, **Selected Option** ou **Not Filled In**. A última opção monta `__empty__` automaticamente. Repita um campo para aceitar vários valores pela regra OU. Campos de data têm seletores próprios de início e fim.
 - **Tarefas:** selecione o lead, título e prazo; responsável e categorias padrão têm seletores. Sem responsável, a API usa o membro da chave. Exige `tasks.create`.
 - **Notas:** informe texto e/ou adicione arquivos em **Attachments → Files** indicando seus campos binários de entrada (ex.: `data`). O node faz upload e anexa os comprovantes automaticamente. Até 10 arquivos por nota; exige `deals.edit`. Uma nova execução faz novos uploads; esta operação não oferece idempotência na API.
+- **Contatos:** escolha o contato pela busca de nome/telefone ou, com valores de outro node, use **By Phone**: o node encontra o contato pelo telefone, mesmo com formatação diferente ou sem o código do país. Se houver mais de um contato com o mesmo telefone, a execução falha em vez de alterar o contato errado. Exige `contacts.view`, `contacts.create`, `contacts.edit` ou `contacts.delete`, conforme a operação.
+- **Campos personalizados:** tipo, tipo de registro, funil e campos são escolhidos por nome. Opções de campos de escolha são preenchidas em linhas (rótulo e cor); a chave é gerada a partir do rótulo, como no app. **Show Only When** escolhe o campo pai e seus valores sem JSON. Exige `settings.custom_fields` para alterar definições.
+- **Opções de campos:** a API guarda as opções dentro do campo, então **Add Options**, **Update Option** e **Remove Option** leem o campo e salvam a lista completa. Adicionar um rótulo que já existe só o reativa, para que o workflow possa rodar de novo sem duplicar opções. Por padrão, **Remove Option** só desativa a opção (**Keep for Existing Leads**); desligue para excluí-la.
 - **Conversas:** destinatário e conversa têm busca por nome/telefone. Mensagens exibem campos conforme o tipo. Templates de texto têm **Body Variables** em ordem, sem montar JSON.
 
 Seletores aceitam expressões para receber valores de outros nodes. Empresas, contatos e conversas suportam paginação na busca.
