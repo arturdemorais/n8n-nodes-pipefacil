@@ -168,14 +168,14 @@ const choiceRows = (operations: string[], description: string, show: IDataObject
 export const customFieldsDescription: INodeProperties[] = [
 	{
 		displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true, displayOptions: displayOptions('customField'), default: 'create', options: [
-			{ name: 'Add Options', value: 'addOptions', action: 'Add options to a custom field', description: 'Add options to a choice field. Existing labels are kept, not duplicated.', routing: { request: { method: 'PATCH', url: '/custom-fields' }, send: { preSend: [prepareFieldChoices] }, ...dataOutput() } },
-			{ name: 'Create', value: 'create', action: 'Create a custom field', routing: { request: { method: 'POST', url: '/custom-fields' }, send: { preSend: [prepareCustomFieldCreate] }, ...dataOutput() } },
-			{ name: 'Delete', value: 'delete', action: 'Delete a custom field', description: 'Delete the field and remove its values from every lead', routing: { request: { method: 'DELETE', url: '=/custom-fields/{{encodeURIComponent($parameter.customField)}}' }, output: { postReceive: [{ type: 'set', properties: { value: '={{ { "deleted": true } }}' } }] } } },
-			{ name: 'Get', value: 'get', action: 'Get a custom field', routing: { request: { method: 'GET', url: '=/custom-fields/{{encodeURIComponent($parameter.customField)}}' }, ...dataOutput() } },
+			{ name: 'Add Options', value: 'addOptions', action: 'Add options to custom field', description: 'Add options to a choice field. Existing labels are kept, not duplicated.', routing: { request: { method: 'PATCH', url: '/custom-fields' }, send: { preSend: [prepareFieldChoices] }, ...dataOutput() } },
+			{ name: 'Create', value: 'create', action: 'Create custom field', routing: { request: { method: 'POST', url: '/custom-fields' }, send: { preSend: [prepareCustomFieldCreate] }, ...dataOutput() } },
+			{ name: 'Delete', value: 'delete', action: 'Delete custom field', description: 'Delete the field and remove its values from every lead', routing: { request: { method: 'DELETE', url: '=/custom-fields/{{encodeURIComponent($parameter.customField)}}' }, output: { postReceive: [{ type: 'set', properties: { value: '={{ { "deleted": true } }}' } }] } } },
+			{ name: 'Get', value: 'get', action: 'Get custom field', routing: { request: { method: 'GET', url: '=/custom-fields/{{encodeURIComponent($parameter.customField)}}' }, ...dataOutput() } },
 			{ name: 'Get Many', value: 'getAll', action: 'Get many custom fields', routing: { request: { method: 'GET', url: '/custom-fields' }, ...dataOutput() } },
-			{ name: 'Remove Option', value: 'removeOption', action: 'Remove an option from a custom field', routing: { request: { method: 'PATCH', url: '/custom-fields' }, send: { preSend: [prepareFieldChoices] }, ...dataOutput() } },
-			{ name: 'Update', value: 'update', action: 'Update a custom field', description: 'Change the field settings. Type, key and record type cannot change.', routing: { request: { method: 'PATCH', url: '=/custom-fields/{{encodeURIComponent($parameter.customField)}}' }, send: { preSend: [prepareCustomFieldUpdate] }, ...dataOutput() } },
-			{ name: 'Update Option', value: 'updateOption', action: 'Update an option of a custom field', description: 'Rename, recolor, activate or deactivate an option', routing: { request: { method: 'PATCH', url: '/custom-fields' }, send: { preSend: [prepareFieldChoices] }, ...dataOutput() } },
+			{ name: 'Remove Option', value: 'removeOption', action: 'Remove option from custom field', routing: { request: { method: 'PATCH', url: '/custom-fields' }, send: { preSend: [prepareFieldChoices] }, ...dataOutput() } },
+			{ name: 'Update', value: 'update', action: 'Update custom field', description: 'Change the field settings. Type, key and record type cannot change.', routing: { request: { method: 'PATCH', url: '=/custom-fields/{{encodeURIComponent($parameter.customField)}}' }, send: { preSend: [prepareCustomFieldUpdate] }, ...dataOutput() } },
+			{ name: 'Update Option', value: 'updateOption', action: 'Update option of custom field', description: 'Rename, recolor, activate or deactivate an option', routing: { request: { method: 'PATCH', url: '/custom-fields' }, send: { preSend: [prepareFieldChoices] }, ...dataOutput() } },
 		],
 	},
 	field(['delete', 'get', 'update']),
@@ -204,7 +204,7 @@ export const customFieldsDescription: INodeProperties[] = [
 		options: [{ name: 'BRL — Brazilian Real', value: 'BRL' }, { name: 'EUR — Euro', value: 'EUR' }, { name: 'USD — US Dollar', value: 'USD' }],
 	},
 	{
-		displayName: 'Meeting Settings', name: 'eventSettings', type: 'collection', placeholder: 'Add option', default: {},
+		displayName: 'Meeting Settings', name: 'eventSettings', type: 'collection', placeholder: 'Add Option', default: {},
 		displayOptions: { show: { resource: ['customField'], operation: ['create'], fieldType: ['event'] } }, options: [
 			{ displayName: 'Conference', name: 'conferenceMode', type: 'options', default: 'none', options: [{ name: 'Google Meet', value: 'google_meet' }, { name: 'None', value: 'none' }] },
 			{ displayName: 'Description', name: 'description', type: 'string', default: '', typeOptions: { rows: 3 } },

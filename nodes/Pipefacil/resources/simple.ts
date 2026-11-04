@@ -135,7 +135,7 @@ export function modernProperties(properties: INodeProperties[]): INodeProperties
 				{ displayName: 'Expected Close At', name: 'expectedCloseAt', type: 'dateTime', default: '' },
 				simplify({ displayName: 'Responsible User', name: 'responsibleUserId', type: 'string', default: '' }),
 				company({ displayName: 'Company', name: 'companyId', type: 'string', default: '' }),
-				{ displayName: 'Use Assignment Strategy', name: 'useAssignmentStrategy', type: 'boolean', default: false },
+				{ displayName: 'Use Assignment Strategy', name: 'useAssignmentStrategy', type: 'boolean', default: false, description: 'Whether to assign the lead using the workspace assignment strategy' },
 			]);
 		}
 		if (property.name === 'updateFields') return { ...property, options: (property.options as INodeProperties[]).filter((field) => !['customFields', 'contact'].includes(field.name)) };

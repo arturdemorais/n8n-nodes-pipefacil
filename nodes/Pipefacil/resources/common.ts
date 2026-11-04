@@ -41,7 +41,7 @@ export function optionalFields(
 		displayName,
 		name,
 		type: 'collection',
-		placeholder: 'Add option',
+		placeholder: 'Add Option',
 		default: {},
 		displayOptions: displayOptions(resource, operation),
 		description,

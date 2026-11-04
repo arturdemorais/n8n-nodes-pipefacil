@@ -1,104 +1,215 @@
 # n8n-nodes-pipefacil
 
-Node da comunidade n8n para integrar workflows ao CRM PipeFácil, da Match Sales.
-Ele usa a API pública oficial para consultar e atualizar negócios, conversar com
-contatos, criar tarefas e notas e consultar referências do workspace.
+An n8n community node for [PipeFácil CRM](https://developers.matchsales.com.br/),
+by Match Sales. Manage leads, contacts, custom fields, tasks, notes and WhatsApp
+conversations using the official public API.
 
-[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
-
-[Installation](#installation)
-[Operations](#operations)
-[Credentials](#credentials)
-[Compatibility](#compatibility)
-[Usage](#usage)
-[Resources](#resources)
-[Version history](#version-history)
+[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/)
+workflow automation platform.
 
 ## Installation
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+On a self-hosted n8n instance with community packages enabled:
 
-## Operations
+1. Open **Settings → Community Nodes → Install** as the instance owner.
+2. Enter `n8n-nodes-pipefacil` and follow the installation prompts.
+3. Add **PipeFácil** to your workflow and configure its credentials.
 
-O node é declarativo e cobre as rotas públicas documentadas do PipeFácil:
-
-- Deals: criar, consultar, listar, atualizar, adicionar/remover tags e listar atividades
-- Contact: criar, consultar, listar com filtros, atualizar, excluir e enviar/remover foto
-- Custom Field: criar, consultar, listar, atualizar e excluir campos, além de adicionar, editar e remover opções
-- Reference: contatos, empresas, funis, tags, campos personalizados e usuários
-- Conversations: enviar mensagens e listar conversas/mensagens
-- Task: criar tarefa pendente vinculada a um lead
-- Note: criar nota com texto/anexos e enviar anexos de notas
-
-As listas com cursor oferecem `Return All` e `Limit`.
+See the [community node installation guide](https://docs.n8n.io/integrations/community-nodes/installation/).
+n8n Cloud requires verification by n8n before a community node can be installed.
+Publishing this package to npm does not, by itself, grant verified status.
 
 ## Credentials
 
-Crie uma chave em **Configurações → Chaves de API** no PipeFácil e cadastre-a na
-credencial `Pipefacil API` do n8n. A chave deve começar com `pf_live_` e é enviada
-como `Authorization: Bearer <chave>`.
+You need a PipeFácil account with access to a workspace and permission to create
+API keys. In PipeFácil, open **Settings → API Keys** and create a key with
+the permissions required by your operations.
 
-O workspace é determinado pela chave; não informe `workspaceId` no node. As chaves
-são secretas e ficam armazenadas pelo sistema de credenciais do n8n.
+Create a **Pipefacil API** credential in n8n and paste the key, starting with
+`pf_live_`, into **Access Token**. The node sends it as `Authorization: Bearer`.
+n8n stores the key in its encrypted credential store. Never put the key in
+workflow parameters or exported examples.
 
-## Compatibility
+The key determines the workspace; there is no `workspaceId` parameter. The
+credential connection test lists workspace users, so the key must be allowed
+to access that endpoint. A key without this access may fail the connection test
+even if it is authorized for a different operation.
 
-Compatível com n8n que suporte community nodes declarativos e a API de credenciais
-`n8n-workflow`. O pacote foi validado com o `@n8n/node-cli` usado neste projeto.
+See [API authentication](https://developers.matchsales.com.br/developers/authentication/)
+for key management and permissions. Contact operations require the corresponding
+`contacts.view`, `contacts.create`, `contacts.edit` or `contacts.delete` permission.
+Creating tasks requires `tasks.create`. Notes and the contact update performed
+after lead creation require `deals.edit`. Editing custom field definitions
+requires `settings.custom_fields`.
+
+## Operations
+
+| Resource | Operations |
+| --- | --- |
+| Deal | Create, get, get many, update, add/remove tag, list activities, list custom field values |
+| Contact | Create, get, get many, update, delete, upload/remove photo |
+| Custom Field | Create, get, get many, update, delete, add options, update option, remove option |
+| Task | Create a pending task linked to a lead |
+| Note | Create a lead note with text and/or attachments, upload an attachment |
+| Conversation | Send a message, list conversations, list messages |
+| Reference | List contacts, companies, pipelines, tags, custom fields and users |
+
+PipeFácil calls a deal a **lead** in its interface. The node's **Deal** resource
+uses the `/deals` API routes. Only operations available in the public API are
+provided; the node does not provide CRUD for every resource.
 
 ## Usage
 
-Ao criar um lead, o node também atualiza o nome e o e-mail preenchidos no contato vinculado, inclusive quando ele já existe. Campos de contato omitidos ou vazios são preservados. Essa atualização usa uma segunda requisição e exige `deals.edit`, além da permissão de criação. Se ela falhar, o erro informa o número do lead já criado: confira esse lead antes de executar novamente para evitar duplicatas. Esse comportamento se aplica às versões 1 e 1.1 do node.
+### Read contacts
 
-1. Instale o pacote como community node no n8n
-2. Crie a credencial `Pipefacil API`
-3. Adicione o node `PipeFácil` ao workflow
-4. Escolha o recurso e a operação e preencha os campos exibidos
+Import [the example workflow](examples/list-contacts.json) into n8n, select your
+**Pipefacil API** credential on its PipeFácil node and execute it manually. It
+reads up to 10 contacts and performs no writes. The example contains no credentials.
 
-Na API, a interface chama o negócio de “lead”, mas o contrato chama o recurso de
-“deal”. Ao mover um deal para uma etapa de perda, informe `Lost Reason`. Algumas
-etapas também exigem campos personalizados.
+For cursor-based lists, use **Return All** to retrieve every page or **Limit** to
+cap the results. **Reference → List Companies** uses **Page** (starting at 0)
+and **Page Size** instead; it returns the requested page only. Custom field
+definitions, pipelines, tags and users are returned as non-paginated lists.
 
-### Inputs simplificados (node 1.1)
+The node returns individual list entries as n8n items. **Reference → List Users**
+returns one item per workspace member. Successful delete operations, including
+**Deal → Remove Tag**, return `{ "deleted": true }`.
 
-Novos nodes usam a versão **1.1**. Workflows da versão **1** mantêm seus formulários e formatos anteriores; atualize a versão do node no n8n e reconfigure os campos alterados para usar a nova interface.
+### Create and update leads
 
-- **Criação de leads:** funil e etapa por nome; detalhes do contato em **Lead Fields**, adicionando só os campos necessários. Empresa tem busca por nome e responsáveis têm seleção por nome. Telefone é opcional.
-- **Atualização:** etapa, empresa, responsáveis e tags por seleção. Use **Contact Fields** para alterar dados do contato e **Custom Fields** para mapear campos personalizados pelos seus nomes e tipos. O funil selecionado carrega o esquema dos campos; ele não move o lead por si só. Campos omitidos são preservados.
-- **Busca de leads:** em **Deal → Get Many → Filters**, escolha funil, etapa, responsáveis e tags por nome. Use **Search (Name, Contact or Phone)** para buscar pelo telefone ou nome. A busca textual não garante igualdade exata de telefone.
-- **Filtros personalizados:** escolha o campo pelo nome e **Match → Value**, **Selected Option** ou **Not Filled In**. A última opção monta `__empty__` automaticamente. Repita um campo para aceitar vários valores pela regra OU. Campos de data têm seletores próprios de início e fim.
-- **Tarefas:** selecione o lead, título e prazo; responsável e categorias padrão têm seletores. Sem responsável, a API usa o membro da chave. Exige `tasks.create`.
-- **Notas:** informe texto e/ou adicione arquivos em **Attachments → Files** indicando seus campos binários de entrada (ex.: `data`). O node faz upload e anexa os comprovantes automaticamente. Até 10 arquivos por nota; exige `deals.edit`. Uma nova execução faz novos uploads; esta operação não oferece idempotência na API.
-- **Contatos:** escolha o contato pela busca de nome/telefone ou, com valores de outro node, use **By Phone**: o node encontra o contato pelo telefone, mesmo com formatação diferente ou sem o código do país. Se houver mais de um contato com o mesmo telefone, a execução falha em vez de alterar o contato errado. Exige `contacts.view`, `contacts.create`, `contacts.edit` ou `contacts.delete`, conforme a operação.
-- **Campos personalizados:** tipo, tipo de registro, funil e campos são escolhidos por nome. Opções de campos de escolha são preenchidas em linhas (rótulo e cor); a chave é gerada a partir do rótulo, como no app. **Show Only When** escolhe o campo pai e seus valores sem JSON. Exige `settings.custom_fields` para alterar definições.
-- **Opções de campos:** a API guarda as opções dentro do campo, então **Add Options**, **Update Option** e **Remove Option** leem o campo e salvam a lista completa. Adicionar um rótulo que já existe só o reativa, para que o workflow possa rodar de novo sem duplicar opções. Por padrão, **Remove Option** só desativa a opção (**Keep for Existing Leads**); desligue para excluí-la.
-- **Conversas:** destinatário e conversa têm busca por nome/telefone. Mensagens exibem campos conforme o tipo. Templates de texto têm **Body Variables** em ordem, sem montar JSON.
+Select **Deal → Create**, choose the pipeline and stage by name and add only the
+details you need under **Lead Fields**. Phone is optional. Company and responsible
+users can be selected by name. Use **Custom Fields** for the selected pipeline's
+typed fields and **Tracking** for available attribution values.
 
-Seletores aceitam expressões para receber valores de outros nodes. Empresas, contatos e conversas suportam paginação na busca.
+After creating a lead, the node also updates the linked contact with the name
+and email you supplied, including when the contact already existed. Empty or
+omitted contact values are preserved. This second request requires `deals.edit`
+in addition to creation permission. If it fails, the message identifies the
+created lead: inspect that lead before retrying to avoid creating duplicates.
 
-A API pública não oferece catálogos de canais, templates nem categorias personalizadas. O nome do template é informado em texto; IDs de canal e categoria personalizada ficam em **Advanced Options**. Templates com componentes de cabeçalho/botão especiais mantêm JSON em **Advanced Template Options**.
+For **Deal → Update**, select the lead and add the fields you want to change.
+Use **Contact Fields** for linked contact details and **Custom Fields** for typed
+custom values. Selecting a pipeline loads its field schema; it does not move the
+lead. Select a stage to move it. Moving to a lost stage requires **Lost Reason**;
+some stages also require custom field values.
 
-Na versão 1, notas com anexos continuam usando **Upload Attachment** e o array de comprovantes em **Attachments**. Essa operação também permanece disponível na versão 1.1 para workflows que precisam controlar os uploads separadamente.
+### Search leads and contacts
 
-### Desenvolvimento
+In **Deal → Get Many → Filters**, select pipeline, stages, responsible users and
+tags. **Search (Name, Contact or Phone)** performs a text search; it does not
+guarantee an exact phone match. Custom field filters support **Value**,
+**Selected Option** and **Not Filled In**. Repeat a field to accept multiple values
+with OR semantics. Date fields support lower and upper bounds.
 
-- `npm test`: build e testes das requisições, filtros, paginação e uploads.
-- `npm run lint`: validação pelo CLI oficial do n8n.
-- `npm run dev`: inicia o n8n com o node para testes manuais com uma chave do PipeFácil.
+Contact selectors search by name or phone. **By Phone** accepts a value from an
+upstream node and tolerates formatting differences or a missing country code.
+The lookup examines up to 50 search results and rejects ambiguous matches in
+that result set. For large or ambiguous result sets, select **From List** or
+**By ID** to target a known contact. Contact creation rejects an existing phone;
+it is not an upsert.
 
-No WhatsApp Cloud, mensagens livres dependem da janela de atendimento de 24 horas;
-fora dela, use um template aprovado. O WhatsApp Lite não aplica essa janela.
+### Tasks, notes and attachments
+
+For tasks, select a lead, title and due date/time. Without an assignee, the API
+uses the member associated with the key. Built-in categories have a selector;
+custom category IDs can be supplied under **Advanced Options**.
+
+For notes, supply text, attachments or both. In **Attachments → Files**, enter
+the incoming binary field for each file, for example `data`. The node uploads and
+attaches up to 10 files automatically. Uploads are not idempotent: executing the
+node again performs new uploads.
+
+**Note → Upload Attachment** is also available when you need to manage receipts
+separately. Pass the unchanged receipt to the same lead's note. **Contact → Upload
+Photo** accepts a JPEG, PNG or WebP binary file up to 5 MB. Binary operations need
+incoming binary data and should be used as regular workflow nodes, not AI tools.
+
+### Custom field definitions
+
+Select field type, record type and field by name. Choice options use rows for
+label and color, with a generated stored key when omitted. **Show Only When**
+selects a parent choice/boolean field and the values that make the field visible.
+
+**Add Options**, **Update Option** and **Remove Option** read the definition and
+save its complete option list. Concurrent edits may overwrite one another;
+serialize changes to the same field. Adding an existing label reactivates it.
+By default, **Remove Option → Keep for Existing Leads** deactivates the option;
+turn this off to delete it. At least one active option must remain.
+
+### Conversations
+
+Select the recipient or conversation by contact name or phone. Message fields
+depend on the message type. For text templates, enter **Body Variables** in
+template order. Templates with header/button components can use JSON under
+**Advanced Template Options**.
+
+The public API does not provide channel, template or custom task-category
+catalogs. Enter the template name directly; channel and custom category IDs are
+available under **Advanced Options**. WhatsApp Cloud free-form messages require
+an open 24-hour customer service window; otherwise use an approved template.
+WhatsApp Lite does not apply that window.
+
+### Output controls
+
+Supported record operations offer **Simplify**, disabled by default to preserve
+the existing output. Enable it to return a compact set of the most useful fields.
+When used as an AI tool, **Output** offers **Raw**, **Simplified** or **Selected
+Fields**. Selected output retains available record identifiers. Activity logs,
+custom field value lists, tag association receipts, upload receipts and deletion confirmations
+keep their existing output.
+
+## Compatibility
+
+The package uses the n8n Nodes API version 1 and the declarative routing engine.
+Node versions **1** and **1.1** are supported. New nodes use version **1.1**, with
+name-based selectors, typed fields and automatic note attachment uploads. Existing
+version **1** workflows retain their earlier forms and formats; upgrading the node
+version requires reviewing and reconfiguring changed inputs.
+
+Development checks use the versions recorded in `package-lock.json`. No minimum
+n8n application version has been established through runtime testing; test on
+your target n8n version before upgrading a production installation.
+
+## Troubleshooting
+
+- **Unauthorized or forbidden:** check that the key is active, belongs to the
+  intended workspace and has permission for the operation and any selector it uses.
+- **No options in a selector:** check workspace visibility and permissions for the
+  corresponding reference endpoint. Use an expression with a known ID if needed.
+- **Lead created, contact update failed:** inspect the lead identified in the
+  message before retrying. Grant `deals.edit` for the follow-up contact update.
+- **Multiple contacts match a phone:** select the exact contact from the list or
+  supply its ID.
+- **Missing binary data:** ensure the upstream node supplies the named binary
+  field and execute the workflow with that input.
+- **API validation or rate limit response:** review the API message, required
+  stage fields and permissions. Reduce request frequency when rate limited. Avoid
+  blindly retrying writes or uploads, which may already have completed.
+
+## Development and publishing
+
+```sh
+npm ci
+npm run lint
+npm test
+npm run dev
+```
+
+`npm run dev` starts a local n8n instance for manual testing. Use a test workspace
+and configure its credentials in n8n. See [publishing instructions](docs/PUBLISHING.md)
+and the [verification audit](docs/VERIFICATION-AUDIT.md) for release checks and
+remaining external prerequisites.
 
 ## Resources
 
-- [Documentação do PipeFácil](https://developers.matchsales.com.br/)
-- [API pública](https://developers.matchsales.com.br/api/)
-- [Contrato OpenAPI](https://developers.matchsales.com.br/api/openapi.json)
-- [Autenticação](https://developers.matchsales.com.br/developers/authentication/)
-- [Documentação de community nodes do n8n](https://docs.n8n.io/integrations/#community-nodes)
+- [PipeFácil documentation](https://developers.matchsales.com.br/)
+- [Public API](https://developers.matchsales.com.br/api/)
+- [OpenAPI contract](https://developers.matchsales.com.br/api/openapi.json)
+- [Authentication](https://developers.matchsales.com.br/developers/authentication/)
+- [n8n community nodes](https://docs.n8n.io/integrations/community-nodes/)
+- [Changelog](CHANGELOG.md)
 
-## Version history
+## License
 
-- `0.3.0`: tarefas, notas com anexos, busca por telefone/campos personalizados e inputs simplificados no node 1.1
-
-- `0.1.0`: primeira versão com a API pública de deals, referências e conversas
+[MIT](LICENSE).

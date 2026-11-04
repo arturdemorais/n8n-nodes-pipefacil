@@ -1,4 +1,5 @@
 import * as choices from './resources/choices';
+import { outputProperties, getOutputFieldOptions } from './resources/output';
 import { modernProperties, messageExtras, updateExtras, getCustomUpdateFields } from './resources/simple';
 import { NodeConnectionTypes, type INodeType, type INodeTypeDescription, type INodeProperties } from 'n8n-workflow';
 import {
@@ -34,7 +35,7 @@ export class Pipefacil implements INodeType {
 		displayName: 'PipeFácil',
 		name: 'pipefacil',
 		icon: { light: 'file:favicon.svg', dark: 'file:favicon.dark.svg' },
-		group: ['transform'],
+		group: ['output'],
 		version: [1, 1.1],
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Use the PipeFácil public API to manage deals, contacts, custom fields, tasks, notes, conversations and workspace references.',
@@ -86,11 +87,13 @@ export class Pipefacil implements INodeType {
 			// Added after version 1.1 already used selectors, so both versions share the same inputs.
 			...contactsDescription,
 			...customFieldsDescription,
+			...outputProperties,
 		],
 	};
 
 	methods = {
 		loadOptions: {
+			getOutputFieldOptions,
 			getUserOptions: choices.getUserOptions,
 			getPipelineSequenceOptions: choices.getPipelineSequenceOptions,
 			getAllStageOptions: choices.getAllStageOptions,

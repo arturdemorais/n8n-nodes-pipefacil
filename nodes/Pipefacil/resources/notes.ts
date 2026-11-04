@@ -26,8 +26,8 @@ export const notesDescription: INodeProperties[] = [
 	{
 		displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true,
 		displayOptions: displayOptions('note'), default: 'create', options: [
-			{ name: 'Create', value: 'create', action: 'Create a note', description: 'Create a lead note with text, uploaded attachments or both', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/notes' }, ...dataOutput() } },
-			{ name: 'Upload Attachment', value: 'uploadAttachment', action: 'Upload a note attachment', description: 'Upload a file and return its receipt for creating a note', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/notes/attachments' }, send: { preSend: [prepareFileUpload] }, ...dataOutput() } },
+			{ name: 'Create', value: 'create', action: 'Create note', description: 'Create a lead note with text, uploaded attachments or both', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/notes' }, ...dataOutput() } },
+			{ name: 'Upload Attachment', value: 'uploadAttachment', action: 'Upload note attachment', description: 'Upload a file and return its receipt for creating a note', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/notes/attachments' }, send: { preSend: [prepareFileUpload] }, ...dataOutput() } },
 		],
 	},
 	dealLocator(['create', 'uploadAttachment'], 'note'),

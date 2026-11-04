@@ -4,7 +4,7 @@ import { bodyString, cursorPagination, dataOutput, displayOptions, optionalField
 export const conversationsDescription: INodeProperties[] = [
 	{
 		displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true, displayOptions: displayOptions('conversation'), options: [
-			{ name: 'Send Message', value: 'sendMessage', action: 'Send a message', description: 'Send a WhatsApp message', routing: { request: { method: 'POST', url: '/conversations/messages' }, ...dataOutput() } },
+			{ name: 'Send Message', value: 'sendMessage', action: 'Send message', description: 'Send a WhatsApp message', routing: { request: { method: 'POST', url: '/conversations/messages' }, ...dataOutput() } },
 			{ name: 'List Conversations', value: 'listConversations', action: 'List conversations', description: 'List visible conversations', routing: { request: { method: 'GET', url: '/conversations' } } },
 			{ name: 'List Messages', value: 'listMessages', action: 'List conversation messages', description: 'List messages from a conversation', routing: { request: { method: 'GET', url: '=/conversations/{{$parameter.conversationKey}}/messages' } } },
 		],

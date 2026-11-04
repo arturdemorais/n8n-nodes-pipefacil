@@ -6,7 +6,7 @@ export const tasksDescription: INodeProperties[] = [
 	{
 		displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true,
 		displayOptions: displayOptions('task'), default: 'create', options: [
-			{ name: 'Create', value: 'create', action: 'Create a task', description: 'Create a pending task linked to a lead', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/tasks' }, ...dataOutput() } },
+			{ name: 'Create', value: 'create', action: 'Create task', description: 'Create a pending task linked to a lead', routing: { request: { method: 'POST', url: '=/deals/{{$parameter.deal.value}}/tasks' }, ...dataOutput() } },
 		],
 	},
 	dealLocator('create', 'task'),

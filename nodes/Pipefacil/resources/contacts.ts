@@ -54,13 +54,13 @@ const filter = (name: string, displayName: string, description: string): INodePr
 export const contactsDescription: INodeProperties[] = [
 	{
 		displayName: 'Operation', name: 'operation', type: 'options', noDataExpression: true, displayOptions: displayOptions('contact'), default: 'create', options: [
-			{ name: 'Create', value: 'create', action: 'Create a contact', description: 'Create a contact identified by its phone', routing: { request: { method: 'POST', url: '/contacts' }, ...dataOutput() } },
-			{ name: 'Delete', value: 'delete', action: 'Delete a contact', description: 'Anonymize and delete a contact, keeping the lead history', routing: { request: { method: 'DELETE', url: '/contacts' }, send: { preSend: [contactPath()] }, ...deleted } },
-			{ name: 'Get', value: 'get', action: 'Get a contact', routing: { request: { method: 'GET', url: '/contacts' }, send: { preSend: [contactPath()] }, ...dataOutput() } },
+			{ name: 'Create', value: 'create', action: 'Create contact', description: 'Create a contact identified by its phone', routing: { request: { method: 'POST', url: '/contacts' }, ...dataOutput() } },
+			{ name: 'Delete', value: 'delete', action: 'Delete contact', description: 'Anonymize and delete a contact, keeping the lead history', routing: { request: { method: 'DELETE', url: '/contacts' }, send: { preSend: [contactPath()] }, ...deleted } },
+			{ name: 'Get', value: 'get', action: 'Get contact', routing: { request: { method: 'GET', url: '/contacts' }, send: { preSend: [contactPath()] }, ...dataOutput() } },
 			{ name: 'Get Many', value: 'getAll', action: 'Get many contacts', routing: { request: { method: 'GET', url: '/contacts' } } },
-			{ name: 'Remove Photo', value: 'removeAvatar', action: 'Remove a contact photo', routing: { request: { method: 'DELETE', url: '/contacts' }, send: { preSend: [contactPath('/avatar')] }, ...deleted } },
-			{ name: 'Update', value: 'update', action: 'Update a contact', description: 'Change only the selected contact details', routing: { request: { method: 'PATCH', url: '/contacts' }, send: { preSend: [contactPath()] }, ...dataOutput() } },
-			{ name: 'Upload Photo', value: 'uploadAvatar', action: 'Upload a contact photo', description: 'Set the contact photo from a JPEG, PNG or WebP file up to 5 MB', routing: { request: { method: 'POST', url: '/contacts' }, send: { preSend: [contactPath('/avatar'), prepareFileUpload] }, ...dataOutput() } },
+			{ name: 'Remove Photo', value: 'removeAvatar', action: 'Remove contact photo', routing: { request: { method: 'DELETE', url: '/contacts' }, send: { preSend: [contactPath('/avatar')] }, ...deleted } },
+			{ name: 'Update', value: 'update', action: 'Update contact', description: 'Change only the selected contact details', routing: { request: { method: 'PATCH', url: '/contacts' }, send: { preSend: [contactPath()] }, ...dataOutput() } },
+			{ name: 'Upload Photo', value: 'uploadAvatar', action: 'Upload contact photo', description: 'Set the contact photo from a JPEG, PNG or WebP file up to 5 MB', routing: { request: { method: 'POST', url: '/contacts' }, send: { preSend: [contactPath('/avatar'), prepareFileUpload] }, ...dataOutput() } },
 		],
 	},
 	{

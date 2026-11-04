@@ -26,6 +26,7 @@ export class PipefacilApi implements ICredentialType {
 			typeOptions: { password: true },
 			required: true,
 			default: '',
+			description: 'Create an API key in PipeFácil under Settings → API Keys. The credential test requires permission to list workspace users.',
 		},
 	];
 

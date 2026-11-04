@@ -9,7 +9,7 @@ export const referenceDescription: INodeProperties[] = [
 			{ name: 'List Pipelines', value: 'listPipelines', action: 'List pipelines', description: 'List active workspace pipelines', routing: { request: { method: 'GET', url: '/pipelines' }, ...dataOutput('data') } },
 			{ name: 'List Tags', value: 'listTags', action: 'List tags', description: 'List workspace tags', routing: { request: { method: 'GET', url: '/tags' }, ...dataOutput('data') } },
 			{ name: 'List Custom Fields', value: 'listCustomFields', action: 'List custom fields', description: 'List custom field definitions', routing: { request: { method: 'GET', url: '/custom-fields' }, ...dataOutput('data') } },
-			{ name: 'List Users', value: 'listUsers', action: 'List users', description: 'List active workspace members', routing: { request: { method: 'GET', url: '/users' }, ...dataOutput('data') } },
+			{ name: 'List Users', value: 'listUsers', action: 'List users', description: 'List active workspace members', routing: { request: { method: 'GET', url: '/users' }, ...dataOutput('data.members') } },
 		],
 		default: 'listContacts',
 	},
