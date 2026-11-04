@@ -8,9 +8,10 @@ authorization after the initial review. Creator Portal submission remains pendin
 ## Result
 
 The local package passes lint, build and regression tests after the corrections
-below. The repository is now public. Published `0.4.0` lacks npm provenance; the
-prepared `0.5.0` release must pass the official scanner after publication. Passing
-local checks does not establish Cloud approval.
+below. The repository is now public. Version `0.5.0` was published through GitHub
+Actions with SLSA v1 provenance and passed every stage of the official scanner,
+including attested source and published tarball analysis. Passing these checks
+does not establish n8n approval. Creator Portal review is a separate step.
 
 ## Requirements reviewed
 
@@ -19,8 +20,8 @@ local checks does not establish Cloud approval.
 | Package discovery | `n8n-nodes-pipefacil` has the required prefix and `n8n-community-node-package` keyword. Node and credential entries resolve to compiled files. |
 | Ownership | npm lists `arturdemorais <artur@grupovorp.com>` as maintainer and the same GitHub repository as `package.json`. No mismatch found in these metadata. |
 | Public source | **Resolved.** Changed from private to public with the owner's authorization. GitHub now reports `visibility: public`. |
-| Provenance | **Blocked for published 0.4.0.** The official scanner explicitly reports that it was published without provenance. The workflow now requests `--provenance` and already grants `id-token: write`. A future successful attestation is still unverified. |
-| Publishing authentication | GitHub Actions is enabled and an `NPM_TOKEN` secret exists. Its value was not read. Token validity and npm Trusted Publisher configuration remain unverified until publication succeeds. |
+| Provenance | **Resolved in 0.5.0.** Published through GitHub Actions with SLSA v1 provenance. The official scanner verified the attestation and fetched source commit 96f3cec. The older 0.4.0 still lacks provenance. |
+| Publishing authentication | GitHub Actions publication succeeded using the existing NPM_TOKEN secret. Its value was not read. No Trusted Publisher or credential changes were necessary. |
 | License | `package.json` declares MIT. Added the missing MIT `LICENSE` file; it is included in the npm file list. |
 | Dependencies | No runtime `dependencies`, `optionalDependencies` or bundled dependencies. Runtime source imports only local modules and the n8n-provided `n8n-workflow` peer dependency. Development dependencies remain outside the distributed runtime. |
 | Restricted APIs | Source inspection found no direct environment-variable access, filesystem access, process execution or console logging in `nodes/` or `credentials/`. Binary data uses n8n's binary helpers. |
@@ -34,7 +35,7 @@ local checks does not establish Cloud approval.
 | Metadata and assets | Changed category to Sales and node group to output. Primary documentation points to the English package README; that GitHub URL becomes public only after the visibility change. Both SVG assets and the codex JSON are present in the package file list. |
 | CI | Corrected concurrency grouping to use workflow and ref; unrelated branches no longer share a cancellation group. Publish checks still enforce tag/version equality, lint and tests before publishing. |
 | Distribution | Inspected `npm pack --dry-run --json` after build. Runtime entry points, icons, README, LICENSE, changelog, docs and example are included. Narrowed published directories to exclude build metadata and the duplicate compiled package manifest. No tests, node_modules or repository configuration are included. |
-| Versioning | Node versions 1 and 1.1 remain available. Package and lockfile are prepared as 0.5.0 with dated changelog entries. The user-list and tag-removal output corrections are documented because downstream expressions may need adjustment. |
+| Versioning | Node versions 1 and 1.1 remain available. Package 0.5.0 is published with a matching lockfile and dated changelog. The user-list and tag-removal output corrections are documented because downstream expressions may need adjustment. |
 
 ## Checks executed
 
@@ -52,6 +53,13 @@ local checks does not establish Cloud approval.
 - `npx --yes @n8n/scan-community-package n8n-nodes-pipefacil@0.4.0`: fails its
   provenance stage. It does not reach attested-source download or static analysis
   of the published tarball. The scanner printed the failed result but exited 0.
+- `npx --yes @n8n/scan-community-package n8n-nodes-pipefacil@0.5.0`: **passes all
+  checks**, including provenance, attested GitHub source at commit `96f3cec` and
+  published package analysis.
+- [GitHub Actions publication](https://github.com/arturdemorais/n8n-nodes-pipefacil/actions/runs/41889354461)
+  and the corresponding CI run both completed successfully.
+- npm reports `latest: 0.5.0` and `https://slsa.dev/provenance/v1` in
+  `dist.attestations.provenance.predicateType`.
 - GitHub and npm metadata inspected. Repository visibility was subsequently
   changed to public with the owner's authorization.
 - Public OpenAPI contract read to confirm authentication and the response fields
@@ -69,10 +77,10 @@ or artifacts were used or changed.
    objects before making it public and found no matches for PipeFácil API keys,
    GitHub/npm tokens, AWS access key IDs or private key headers. This is not an
    exhaustive secret-detection guarantee.
-2. Configure/confirm npm Trusted Publishing or the existing granular token, then
-   publish a new version through GitHub Actions. Scan that exact version and
-   confirm its attested repository and source commit. The existing version cannot
-   be retroactively republished with provenance.
+2. Publication and scanning are resolved for 0.5.0. The existing granular token
+   worked; the source commit and attestation were verified. Keep publishing future
+   releases through GitHub Actions. Older versions cannot be retroactively
+   republished with provenance.
 3. Run the example and representative operations in a real n8n test instance.
    Check selectors, credentials, light/dark icons, binary input and AI tool mode.
    No minimum supported n8n application version is claimed until runtime testing.
