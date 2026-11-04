@@ -65,6 +65,14 @@ package. Supply the public repository, documentation and any testing information
 requested by the portal. Address the technical/UX review before claiming verified
 status or Cloud availability.
 
+After email ownership confirmation and automated review, the portal requires a
+demo video before manual review. Record up to five minutes without cuts, showing
+installation of the exact submitted npm version, a new workflow with the node,
+credential creation and a successful connection test, representative operations
+and one action used as an AI agent tool. Upload the recording or provide a hosted
+video link; narration is optional. Use a test workspace and keep secret values
+masked during the recording.
+
 ## Sources
 
 - [Submission and provenance requirements](https://docs.n8n.io/connect/create-nodes/deploy-your-node/submit-community-nodes.md)

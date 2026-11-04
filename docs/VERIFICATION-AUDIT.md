@@ -3,7 +3,8 @@
 Audit date: 4 November 2026. The initial review inspected `0.4.0` and the local
 changes subsequently prepared as `0.5.0`. This is a readiness review, not n8n
 approval or a penetration test. The repository was made public with the owner's
-authorization after the initial review. Creator Portal submission remains pending.
+authorization after the initial review. Creator Portal submission is confirmed;
+automated review passed and manual review is awaiting a demo video.
 
 ## Result
 
@@ -13,13 +14,23 @@ Actions with SLSA v1 provenance and passed every stage of the official scanner,
 including attested source and published tarball analysis. Passing these checks
 does not establish n8n approval. Creator Portal review is a separate step.
 
-## Creator Portal handoff
+## Creator Portal submission
 
 The authenticated Creator Portal accepted the package's provenance after npm's
 `/latest` endpoint updated from 0.4.0 to 0.5.0. The submission reached the
 **Confirm identity** modal and sent a one-time token to the package maintainer's
-email address. Email confirmation is still required before the submission can
-be considered complete. No token is stored in the repository.
+email address. The owner completed this confirmation in the browser. The portal
+now shows **Automated review — COMPLETE** and **Manual review — AWAITING VIDEO**.
+It explicitly confirms that automated review passed. Manual review and approval
+have not yet been granted. No token is stored in the repository.
+
+The next required artifact is a screen recording of no more than five minutes,
+without cuts. It must show installation of the submitted version from npm,
+adding the node to a workflow, creating and successfully testing its credential,
+representative operations and one operation used as an AI agent tool. The portal
+accepts a video upload or a hosted video link. Narration is optional.
+
+[Submission status](https://creators.n8n.io/nodes/n8n-nodes-pipefacil/integration)
 
 ## Requirements reviewed
 
