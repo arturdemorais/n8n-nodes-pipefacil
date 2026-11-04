@@ -13,6 +13,14 @@ Actions with SLSA v1 provenance and passed every stage of the official scanner,
 including attested source and published tarball analysis. Passing these checks
 does not establish n8n approval. Creator Portal review is a separate step.
 
+## Creator Portal handoff
+
+The authenticated Creator Portal accepted the package's provenance after npm's
+`/latest` endpoint updated from 0.4.0 to 0.5.0. The submission reached the
+**Confirm identity** modal and sent a one-time token to the package maintainer's
+email address. Email confirmation is still required before the submission can
+be considered complete. No token is stored in the repository.
+
 ## Requirements reviewed
 
 | Area | Evidence and result |
